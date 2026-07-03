@@ -1,0 +1,1018 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "Alex Johnson",
+      "email": "demo@finlytics.app",
+      "password_hash": "$2a$10$zhaQS5LR8Y5xVZmmQg39QuNleaARMG3V0wbRiux8EwMHQO4yxFkni",
+      "currency": "USD",
+      "theme": "dark",
+      "created_at": "2026-07-03T05:36:09.812Z"
+    },
+    {
+      "id": 2,
+      "name": "abhiram",
+      "email": "abhiramchoudhary343@gmail.com",
+      "password_hash": "$2a$10$HbGkie/IA8IAnddxGbxPh.Zv5u6IrJ/41xd8lRbuL00CitP9UO6Va",
+      "currency": "USD",
+      "theme": "dark",
+      "created_at": "2026-07-03T05:38:01.374Z"
+    },
+    {
+      "id": 3,
+      "name": "ABHIRAM CHOUDHARY",
+      "email": "abhiramchoudhary943@gmail.com",
+      "password_hash": "$2a$10$Hs1GDE6iko0ago3y1at3A.PNT6wT.9TbhdynBXRxVFeEjQGJfphnm",
+      "currency": "INR",
+      "theme": "dark",
+      "created_at": "2026-07-03T06:01:18.617Z"
+    }
+  ],
+  "transactions": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.813Z",
+      "type": "income",
+      "merchant": "Acme Corp — Salary",
+      "category": "Salary",
+      "amount": 6200,
+      "date": "2026-07-01",
+      "notes": "Monthly salary",
+      "recurring": true
+    },
+    {
+      "id": 2,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.814Z",
+      "type": "expense",
+      "merchant": "Whole Foods Market",
+      "category": "Food",
+      "amount": 87.4,
+      "date": "2026-07-03",
+      "notes": "",
+      "recurring": false
+    },
+    {
+      "id": 3,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.814Z",
+      "type": "expense",
+      "merchant": "Netflix",
+      "category": "Entertainment",
+      "amount": 15.99,
+      "date": "2026-07-01",
+      "notes": "",
+      "recurring": true
+    },
+    {
+      "id": 4,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.815Z",
+      "type": "expense",
+      "merchant": "Uber",
+      "category": "Transport",
+      "amount": 22.5,
+      "date": "2026-07-02",
+      "notes": "Airport ride",
+      "recurring": false
+    },
+    {
+      "id": 5,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.815Z",
+      "type": "expense",
+      "merchant": "Apple Store",
+      "category": "Shopping",
+      "amount": 299,
+      "date": "2026-06-30",
+      "notes": "AirPods",
+      "recurring": false
+    },
+    {
+      "id": 6,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.815Z",
+      "type": "expense",
+      "merchant": "PG&E Electric",
+      "category": "Bills",
+      "amount": 134,
+      "date": "2026-06-28",
+      "notes": "",
+      "recurring": true
+    },
+    {
+      "id": 7,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.816Z",
+      "type": "expense",
+      "merchant": "Starbucks",
+      "category": "Food",
+      "amount": 6.75,
+      "date": "2026-06-28",
+      "notes": "Morning coffee",
+      "recurring": false
+    },
+    {
+      "id": 8,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.816Z",
+      "type": "expense",
+      "merchant": "Planet Fitness",
+      "category": "Health",
+      "amount": 25,
+      "date": "2026-06-27",
+      "notes": "",
+      "recurring": true
+    },
+    {
+      "id": 9,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.816Z",
+      "type": "expense",
+      "merchant": "Delta Airlines",
+      "category": "Travel",
+      "amount": 480,
+      "date": "2026-06-25",
+      "notes": "NYC trip",
+      "recurring": false
+    },
+    {
+      "id": 10,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.817Z",
+      "type": "expense",
+      "merchant": "Coursera",
+      "category": "Education",
+      "amount": 49,
+      "date": "2026-06-24",
+      "notes": "",
+      "recurring": false
+    },
+    {
+      "id": 11,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.817Z",
+      "type": "expense",
+      "merchant": "Chipotle",
+      "category": "Food",
+      "amount": 12.3,
+      "date": "2026-06-23",
+      "notes": "",
+      "recurring": false
+    },
+    {
+      "id": 12,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.817Z",
+      "type": "income",
+      "merchant": "Freelance Project",
+      "category": "Freelance",
+      "amount": 850,
+      "date": "2026-06-22",
+      "notes": "Web design gig",
+      "recurring": false
+    },
+    {
+      "id": 13,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.818Z",
+      "type": "expense",
+      "merchant": "Amazon",
+      "category": "Shopping",
+      "amount": 67,
+      "date": "2026-06-21",
+      "notes": "",
+      "recurring": false
+    },
+    {
+      "id": 14,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.818Z",
+      "type": "expense",
+      "merchant": "Spotify",
+      "category": "Entertainment",
+      "amount": 9.99,
+      "date": "2026-06-20",
+      "notes": "",
+      "recurring": true
+    },
+    {
+      "id": 15,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.818Z",
+      "type": "expense",
+      "merchant": "Target",
+      "category": "Shopping",
+      "amount": 113.4,
+      "date": "2026-06-18",
+      "notes": "",
+      "recurring": false
+    },
+    {
+      "id": 16,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.819Z",
+      "type": "expense",
+      "merchant": "Shell Gas Station",
+      "category": "Transport",
+      "amount": 55,
+      "date": "2026-06-17",
+      "notes": "",
+      "recurring": false
+    },
+    {
+      "id": 17,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.819Z",
+      "type": "expense",
+      "merchant": "CVS Pharmacy",
+      "category": "Health",
+      "amount": 34.5,
+      "date": "2026-06-15",
+      "notes": "",
+      "recurring": false
+    },
+    {
+      "id": 18,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.821Z",
+      "type": "expense",
+      "merchant": "Verizon Wireless",
+      "category": "Bills",
+      "amount": 89,
+      "date": "2026-06-14",
+      "notes": "",
+      "recurring": true
+    },
+    {
+      "id": 19,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.822Z",
+      "type": "expense",
+      "merchant": "McDonald's",
+      "category": "Food",
+      "amount": 8.5,
+      "date": "2026-06-12",
+      "notes": "",
+      "recurring": false
+    },
+    {
+      "id": 20,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.822Z",
+      "type": "income",
+      "merchant": "Dividend — AAPL",
+      "category": "Investment",
+      "amount": 142.5,
+      "date": "2026-06-10",
+      "notes": "",
+      "recurring": false
+    },
+    {
+      "id": 21,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.822Z",
+      "type": "income",
+      "merchant": "Acme Corp — Salary",
+      "category": "Salary",
+      "amount": 5800,
+      "date": "2026-01-01",
+      "notes": "",
+      "recurring": true
+    },
+    {
+      "id": 22,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.822Z",
+      "type": "expense",
+      "merchant": "Rent",
+      "category": "Bills",
+      "amount": 1800,
+      "date": "2026-01-05",
+      "notes": "",
+      "recurring": true
+    },
+    {
+      "id": 23,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.823Z",
+      "type": "expense",
+      "merchant": "Grocery Store",
+      "category": "Food",
+      "amount": 320,
+      "date": "2026-01-10",
+      "notes": "",
+      "recurring": false
+    },
+    {
+      "id": 24,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.823Z",
+      "type": "expense",
+      "merchant": "Gas Station",
+      "category": "Transport",
+      "amount": 60,
+      "date": "2026-01-15",
+      "notes": "",
+      "recurring": false
+    },
+    {
+      "id": 25,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.823Z",
+      "type": "expense",
+      "merchant": "Shopping",
+      "category": "Shopping",
+      "amount": 220,
+      "date": "2026-01-20",
+      "notes": "",
+      "recurring": false
+    },
+    {
+      "id": 26,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.824Z",
+      "type": "income",
+      "merchant": "Acme Corp — Salary",
+      "category": "Salary",
+      "amount": 6200,
+      "date": "2026-02-01",
+      "notes": "",
+      "recurring": true
+    },
+    {
+      "id": 27,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.824Z",
+      "type": "expense",
+      "merchant": "Rent",
+      "category": "Bills",
+      "amount": 1800,
+      "date": "2026-02-05",
+      "notes": "",
+      "recurring": true
+    },
+    {
+      "id": 28,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.825Z",
+      "type": "expense",
+      "merchant": "Grocery Store",
+      "category": "Food",
+      "amount": 380,
+      "date": "2026-02-10",
+      "notes": "",
+      "recurring": false
+    },
+    {
+      "id": 29,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.825Z",
+      "type": "expense",
+      "merchant": "Airline Tickets",
+      "category": "Travel",
+      "amount": 890,
+      "date": "2026-02-18",
+      "notes": "",
+      "recurring": false
+    },
+    {
+      "id": 30,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.825Z",
+      "type": "expense",
+      "merchant": "Electronics",
+      "category": "Shopping",
+      "amount": 340,
+      "date": "2026-02-22",
+      "notes": "",
+      "recurring": false
+    },
+    {
+      "id": 31,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.825Z",
+      "type": "income",
+      "merchant": "Acme Corp — Salary",
+      "category": "Salary",
+      "amount": 5800,
+      "date": "2026-03-01",
+      "notes": "",
+      "recurring": true
+    },
+    {
+      "id": 32,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.826Z",
+      "type": "expense",
+      "merchant": "Rent",
+      "category": "Bills",
+      "amount": 1800,
+      "date": "2026-03-05",
+      "notes": "",
+      "recurring": true
+    },
+    {
+      "id": 33,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.826Z",
+      "type": "expense",
+      "merchant": "Food",
+      "category": "Food",
+      "amount": 290,
+      "date": "2026-03-10",
+      "notes": "",
+      "recurring": false
+    },
+    {
+      "id": 34,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.826Z",
+      "type": "expense",
+      "merchant": "Transport",
+      "category": "Transport",
+      "amount": 110,
+      "date": "2026-03-14",
+      "notes": "",
+      "recurring": false
+    },
+    {
+      "id": 35,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.826Z",
+      "type": "income",
+      "merchant": "Freelance",
+      "category": "Freelance",
+      "amount": 600,
+      "date": "2026-03-20",
+      "notes": "",
+      "recurring": false
+    },
+    {
+      "id": 36,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.826Z",
+      "type": "income",
+      "merchant": "Acme Corp — Salary",
+      "category": "Salary",
+      "amount": 6200,
+      "date": "2026-04-01",
+      "notes": "",
+      "recurring": true
+    },
+    {
+      "id": 37,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.827Z",
+      "type": "expense",
+      "merchant": "Rent",
+      "category": "Bills",
+      "amount": 1800,
+      "date": "2026-04-05",
+      "notes": "",
+      "recurring": true
+    },
+    {
+      "id": 38,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.827Z",
+      "type": "expense",
+      "merchant": "Food",
+      "category": "Food",
+      "amount": 410,
+      "date": "2026-04-10",
+      "notes": "",
+      "recurring": false
+    },
+    {
+      "id": 39,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.827Z",
+      "type": "expense",
+      "merchant": "Vacation",
+      "category": "Travel",
+      "amount": 1200,
+      "date": "2026-04-20",
+      "notes": "Spring break",
+      "recurring": false
+    },
+    {
+      "id": 40,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.827Z",
+      "type": "expense",
+      "merchant": "Clothes",
+      "category": "Shopping",
+      "amount": 390,
+      "date": "2026-04-25",
+      "notes": "",
+      "recurring": false
+    },
+    {
+      "id": 41,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.828Z",
+      "type": "income",
+      "merchant": "Acme Corp — Salary",
+      "category": "Salary",
+      "amount": 5900,
+      "date": "2026-05-01",
+      "notes": "",
+      "recurring": true
+    },
+    {
+      "id": 42,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.828Z",
+      "type": "expense",
+      "merchant": "Rent",
+      "category": "Bills",
+      "amount": 1800,
+      "date": "2026-05-05",
+      "notes": "",
+      "recurring": true
+    },
+    {
+      "id": 43,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.828Z",
+      "type": "expense",
+      "merchant": "Food",
+      "category": "Food",
+      "amount": 350,
+      "date": "2026-05-10",
+      "notes": "",
+      "recurring": false
+    },
+    {
+      "id": 44,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.828Z",
+      "type": "expense",
+      "merchant": "Gym",
+      "category": "Health",
+      "amount": 75,
+      "date": "2026-05-12",
+      "notes": "",
+      "recurring": true
+    },
+    {
+      "id": 45,
+      "user_id": 1,
+      "created_at": "2026-07-03T05:36:09.829Z",
+      "type": "expense",
+      "merchant": "Shopping",
+      "category": "Shopping",
+      "amount": 480,
+      "date": "2026-05-25",
+      "notes": "",
+      "recurring": false
+    },
+    {
+      "id": 48,
+      "user_id": 3,
+      "type": "expense",
+      "merchant": "auto",
+      "category": "Travel",
+      "amount": 320,
+      "date": "2026-07-03",
+      "notes": "",
+      "recurring": false,
+      "created_at": "2026-07-03T06:44:19.611Z"
+    },
+    {
+      "id": 49,
+      "user_id": 3,
+      "type": "expense",
+      "merchant": "hostel",
+      "category": "Bills",
+      "amount": 13000,
+      "date": "2026-07-03",
+      "notes": "",
+      "recurring": false,
+      "created_at": "2026-07-03T06:46:55.165Z"
+    },
+    {
+      "id": 50,
+      "user_id": 3,
+      "type": "expense",
+      "merchant": "food",
+      "category": "Food",
+      "amount": 500,
+      "date": "2026-07-03",
+      "notes": "",
+      "recurring": false,
+      "created_at": "2026-07-03T06:49:40.724Z"
+    }
+  ],
+  "budgets": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "category": "Food",
+      "limit_amount": 600,
+      "emoji": "🍔",
+      "color": "#F59E0B"
+    },
+    {
+      "id": 2,
+      "user_id": 1,
+      "category": "Transport",
+      "limit_amount": 200,
+      "emoji": "🚗",
+      "color": "#6366F1"
+    },
+    {
+      "id": 3,
+      "user_id": 1,
+      "category": "Shopping",
+      "limit_amount": 400,
+      "emoji": "🛍",
+      "color": "#EC4899"
+    },
+    {
+      "id": 4,
+      "user_id": 1,
+      "category": "Bills",
+      "limit_amount": 350,
+      "emoji": "⚡",
+      "color": "#EF4444"
+    },
+    {
+      "id": 5,
+      "user_id": 1,
+      "category": "Entertainment",
+      "limit_amount": 100,
+      "emoji": "🎬",
+      "color": "#8B5CF6"
+    },
+    {
+      "id": 6,
+      "user_id": 1,
+      "category": "Health",
+      "limit_amount": 150,
+      "emoji": "❤️",
+      "color": "#10B981"
+    },
+    {
+      "id": 7,
+      "user_id": 1,
+      "category": "Travel",
+      "limit_amount": 1500,
+      "emoji": "✈️",
+      "color": "#0EA5E9"
+    },
+    {
+      "id": 8,
+      "user_id": 1,
+      "category": "Education",
+      "limit_amount": 200,
+      "emoji": "📚",
+      "color": "#14B8A6"
+    }
+  ],
+  "monthly_budgets": [
+    {
+      "id": 1,
+      "user_id": 3,
+      "month": "2026-07",
+      "amount": 20000
+    }
+  ],
+  "categories": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "type": "expense",
+      "name": "Food",
+      "emoji": "🍔",
+      "color": "#10B981",
+      "bg": "rgba(16, 185, 129, 0.12)"
+    },
+    {
+      "id": 2,
+      "user_id": 1,
+      "type": "expense",
+      "name": "Transport",
+      "emoji": "🚗",
+      "color": "#3B82F6",
+      "bg": "rgba(59, 130, 246, 0.12)"
+    },
+    {
+      "id": 3,
+      "user_id": 1,
+      "type": "expense",
+      "name": "Shopping",
+      "emoji": "🛍",
+      "color": "#8B5CF6",
+      "bg": "rgba(139, 92, 246, 0.12)"
+    },
+    {
+      "id": 4,
+      "user_id": 1,
+      "type": "expense",
+      "name": "Bills",
+      "emoji": "⚡",
+      "color": "#EF4444",
+      "bg": "rgba(239, 68, 68, 0.12)"
+    },
+    {
+      "id": 5,
+      "user_id": 1,
+      "type": "expense",
+      "name": "Entertainment",
+      "emoji": "🎬",
+      "color": "#F59E0B",
+      "bg": "rgba(245, 158, 11, 0.12)"
+    },
+    {
+      "id": 6,
+      "user_id": 1,
+      "type": "expense",
+      "name": "Health",
+      "emoji": "❤️",
+      "color": "#14B8A6",
+      "bg": "rgba(20, 184, 166, 0.12)"
+    },
+    {
+      "id": 7,
+      "user_id": 1,
+      "type": "expense",
+      "name": "Travel",
+      "emoji": "✈️",
+      "color": "#06B6D4",
+      "bg": "rgba(6, 182, 212, 0.12)"
+    },
+    {
+      "id": 8,
+      "user_id": 1,
+      "type": "expense",
+      "name": "Education",
+      "emoji": "📚",
+      "color": "#6366F1",
+      "bg": "rgba(99, 102, 241, 0.12)"
+    },
+    {
+      "id": 9,
+      "user_id": 1,
+      "type": "income",
+      "name": "Salary",
+      "emoji": "💼",
+      "color": "#10B981",
+      "bg": "rgba(16, 185, 129, 0.12)"
+    },
+    {
+      "id": 10,
+      "user_id": 1,
+      "type": "income",
+      "name": "Freelance",
+      "emoji": "💻",
+      "color": "#3B82F6",
+      "bg": "rgba(59, 130, 246, 0.12)"
+    },
+    {
+      "id": 11,
+      "user_id": 1,
+      "type": "income",
+      "name": "Investment",
+      "emoji": "📈",
+      "color": "#8B5CF6",
+      "bg": "rgba(139, 92, 246, 0.12)"
+    },
+    {
+      "id": 12,
+      "user_id": 1,
+      "type": "income",
+      "name": "Other",
+      "emoji": "💰",
+      "color": "#F59E0B",
+      "bg": "rgba(245, 158, 11, 0.12)"
+    },
+    {
+      "id": 13,
+      "user_id": 2,
+      "type": "expense",
+      "name": "Food",
+      "emoji": "🍔",
+      "color": "#10B981",
+      "bg": "rgba(16, 185, 129, 0.12)"
+    },
+    {
+      "id": 14,
+      "user_id": 2,
+      "type": "expense",
+      "name": "Transport",
+      "emoji": "🚗",
+      "color": "#3B82F6",
+      "bg": "rgba(59, 130, 246, 0.12)"
+    },
+    {
+      "id": 15,
+      "user_id": 2,
+      "type": "expense",
+      "name": "Shopping",
+      "emoji": "🛍",
+      "color": "#8B5CF6",
+      "bg": "rgba(139, 92, 246, 0.12)"
+    },
+    {
+      "id": 16,
+      "user_id": 2,
+      "type": "expense",
+      "name": "Bills",
+      "emoji": "⚡",
+      "color": "#EF4444",
+      "bg": "rgba(239, 68, 68, 0.12)"
+    },
+    {
+      "id": 17,
+      "user_id": 2,
+      "type": "expense",
+      "name": "Entertainment",
+      "emoji": "🎬",
+      "color": "#F59E0B",
+      "bg": "rgba(245, 158, 11, 0.12)"
+    },
+    {
+      "id": 18,
+      "user_id": 2,
+      "type": "expense",
+      "name": "Health",
+      "emoji": "❤️",
+      "color": "#14B8A6",
+      "bg": "rgba(20, 184, 166, 0.12)"
+    },
+    {
+      "id": 19,
+      "user_id": 2,
+      "type": "expense",
+      "name": "Travel",
+      "emoji": "✈️",
+      "color": "#06B6D4",
+      "bg": "rgba(6, 182, 212, 0.12)"
+    },
+    {
+      "id": 20,
+      "user_id": 2,
+      "type": "expense",
+      "name": "Education",
+      "emoji": "📚",
+      "color": "#6366F1",
+      "bg": "rgba(99, 102, 241, 0.12)"
+    },
+    {
+      "id": 21,
+      "user_id": 2,
+      "type": "income",
+      "name": "Salary",
+      "emoji": "💼",
+      "color": "#10B981",
+      "bg": "rgba(16, 185, 129, 0.12)"
+    },
+    {
+      "id": 22,
+      "user_id": 2,
+      "type": "income",
+      "name": "Freelance",
+      "emoji": "💻",
+      "color": "#3B82F6",
+      "bg": "rgba(59, 130, 246, 0.12)"
+    },
+    {
+      "id": 23,
+      "user_id": 2,
+      "type": "income",
+      "name": "Investment",
+      "emoji": "📈",
+      "color": "#8B5CF6",
+      "bg": "rgba(139, 92, 246, 0.12)"
+    },
+    {
+      "id": 24,
+      "user_id": 2,
+      "type": "income",
+      "name": "Other",
+      "emoji": "💰",
+      "color": "#F59E0B",
+      "bg": "rgba(245, 158, 11, 0.12)"
+    },
+    {
+      "id": 25,
+      "user_id": 3,
+      "type": "expense",
+      "name": "Food",
+      "emoji": "🍔",
+      "color": "#10B981",
+      "bg": "rgba(16, 185, 129, 0.12)"
+    },
+    {
+      "id": 26,
+      "user_id": 3,
+      "type": "expense",
+      "name": "Transport",
+      "emoji": "🚗",
+      "color": "#3B82F6",
+      "bg": "rgba(59, 130, 246, 0.12)"
+    },
+    {
+      "id": 27,
+      "user_id": 3,
+      "type": "expense",
+      "name": "Shopping",
+      "emoji": "🛍",
+      "color": "#8B5CF6",
+      "bg": "rgba(139, 92, 246, 0.12)"
+    },
+    {
+      "id": 28,
+      "user_id": 3,
+      "type": "expense",
+      "name": "Bills",
+      "emoji": "⚡",
+      "color": "#EF4444",
+      "bg": "rgba(239, 68, 68, 0.12)"
+    },
+    {
+      "id": 29,
+      "user_id": 3,
+      "type": "expense",
+      "name": "Entertainment",
+      "emoji": "🎬",
+      "color": "#F59E0B",
+      "bg": "rgba(245, 158, 11, 0.12)"
+    },
+    {
+      "id": 30,
+      "user_id": 3,
+      "type": "expense",
+      "name": "Health",
+      "emoji": "❤️",
+      "color": "#14B8A6",
+      "bg": "rgba(20, 184, 166, 0.12)"
+    },
+    {
+      "id": 31,
+      "user_id": 3,
+      "type": "expense",
+      "name": "Travel",
+      "emoji": "✈️",
+      "color": "#06B6D4",
+      "bg": "rgba(6, 182, 212, 0.12)"
+    },
+    {
+      "id": 32,
+      "user_id": 3,
+      "type": "expense",
+      "name": "Education",
+      "emoji": "📚",
+      "color": "#6366F1",
+      "bg": "rgba(99, 102, 241, 0.12)"
+    },
+    {
+      "id": 33,
+      "user_id": 3,
+      "type": "income",
+      "name": "Salary",
+      "emoji": "💼",
+      "color": "#10B981",
+      "bg": "rgba(16, 185, 129, 0.12)"
+    },
+    {
+      "id": 34,
+      "user_id": 3,
+      "type": "income",
+      "name": "Freelance",
+      "emoji": "💻",
+      "color": "#3B82F6",
+      "bg": "rgba(59, 130, 246, 0.12)"
+    },
+    {
+      "id": 35,
+      "user_id": 3,
+      "type": "income",
+      "name": "Investment",
+      "emoji": "📈",
+      "color": "#8B5CF6",
+      "bg": "rgba(139, 92, 246, 0.12)"
+    },
+    {
+      "id": 36,
+      "user_id": 3,
+      "type": "income",
+      "name": "Other",
+      "emoji": "💰",
+      "color": "#F59E0B",
+      "bg": "rgba(245, 158, 11, 0.12)"
+    },
+    {
+      "id": 37,
+      "user_id": 3,
+      "type": "expense",
+      "name": "room rent",
+      "emoji": "🏷",
+      "color": "#8B5CF6",
+      "bg": "rgba(139,92,246,0.12)"
+    }
+  ]
+}

@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Finlytics — Dashboard</title>
+  <link href="style.css" rel="stylesheet" />
+</head>
+<body>
+
+<div class="bg-symbols" id="bg-symbols"></div>
+<div class="app-layout">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      </div>
+      <div class="brand-name">Fin<span>lytics</span></div>
+    </div>
+    
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-page="dashboard">
+        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a href="#" class="nav-item" data-page="transactions">
+        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Transactions
+      </a>
+      <a href="#" class="nav-item" data-page="budgets">
+        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+        Budgets
+      </a>
+      <a href="#" class="nav-item" data-page="settings">
+        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </a>
+      
+      <!-- Quick Theme Toggle -->
+      <a href="#" class="nav-item" id="sidebar-theme-toggle" onclick="toggleThemeGlobal(event)">
+        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        Toggle Theme
+      </a>
+    </nav>
+    <div class="sidebar-user">
+      <div class="user-avatar" id="sb-user-initial">U</div>
+      <div class="user-info">
+        <div class="user-name" id="sb-user-name">Loading...</div>
+        <div class="user-plan">Pro Member</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN CONTENT ── -->
+  <main class="main-content">
+    
+    <!-- DASHBOARD PAGE -->
+    <div id="page-dashboard" class="page active">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Overview</h1>
+          <p class="page-subtitle" id="dash-greeting">Welcome back!</p>
+        </div>
+        <div class="page-header-right">
+          <div class="date-badge" id="dash-date">...</div>
+        </div>
+      </div>
+
+      <!-- Overarching Budget Bar -->
+      <div class="budget-overview-card" id="bov-card" style="display:none">
+        <div class="bov-header">
+          <span class="bov-title">Monthly Budget Tracker</span>
+          <button class="small-btn btn-outline" onclick="openMonthlyBudgetModal()">Adjust Budget</button>
+        </div>
+        <div class="bov-numbers">
+          <div class="bov-num">
+            <span class="bov-num-val" id="bov-spent">$0.00</span>
+            <span class="bov-num-lbl">Spent this month</span>
+          </div>
+          <div class="bov-num">
+            <span class="bov-num-val" id="bov-limit" style="color:var(--text-muted)">$0.00</span>
+            <span class="bov-num-lbl">Total limit</span>
+          </div>
+        </div>
+        <div class="bov-bar-track">
+          <div class="bov-bar-fill" id="bov-fill" style="width:0%"></div>
+        </div>
+        <div class="bov-footer">
+          <span id="bov-pct">0% used</span>
+          <span id="bov-rem">Remaining</span>
+        </div>
+      </div>
+
+      <div class="summary-cards">
+        <div class="summary-card">
+          <div class="card-header">
+            <span class="card-label">TOTAL BALANCE</span>
+            <div class="card-icon balance-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2" ry="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+          </div>
+          <div class="card-value" id="val-balance">--</div>
+          <div class="card-change positive">↑ Available funds</div>
+        </div>
+        <div class="summary-card">
+          <div class="card-header">
+            <span class="card-label">MONTHLY INCOME</span>
+            <div class="card-icon income-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>
+          </div>
+          <div class="card-value income-value" id="val-income">--</div>
+          <div class="card-change positive">Earnings</div>
+        </div>
+        <div class="summary-card">
+          <div class="card-header">
+            <span class="card-label">MONTHLY EXPENSES</span>
+            <div class="card-icon expenses-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg></div>
+          </div>
+          <div class="card-value expenses-value" id="val-expenses">--</div>
+          <div class="card-change negative">Spendings</div>
+        </div>
+        <div class="summary-card">
+          <div class="card-header">
+            <span class="card-label">SAVINGS RATE</span>
+            <div class="card-icon savings-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg></div>
+          </div>
+          <div class="card-value savings-value" id="val-savings">--</div>
+          <div class="card-change">Goal: >20%</div>
+        </div>
+      </div>
+
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <h3 class="chart-title">Spending Breakdown</h3>
+              <p class="chart-subtitle">This month</p>
+            </div>
+          </div>
+          <div class="donut-wrapper">
+            <div class="donut-canvas-container">
+              <canvas id="categoryChart"></canvas>
+              <div class="donut-center">
+                <span class="donut-total-label">Expenses</span>
+                <span class="donut-total-value" id="donut-center-val">$0</span>
+              </div>
+            </div>
+          </div>
+          <!-- We move legend below for responsive stack -->
+          <div class="donut-legend" id="donut-legend" style="margin-top:24px;"></div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <h3 class="chart-title">Cash Flow</h3>
+              <p class="chart-subtitle">Income vs Expenses (6 mo)</p>
+            </div>
+            <div class="chart-legend-pills">
+              <span class="legend-pill income-pill">Income</span>
+              <span class="legend-pill expense-pill">Expenses</span>
+            </div>
+          </div>
+          <div class="line-chart-container">
+            <canvas id="trendChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <h2 class="section-title">Recent Transactions</h2>
+        <a class="btn-link" onclick="document.querySelector('[data-page=\'transactions\']').click()">View All</a>
+      </div>
+      <div class="transactions-list" id="recent-txn-list">
+        <!-- populated via js -->
+      </div>
+    </div>
+
+
+    <!-- TRANSACTIONS PAGE -->
+    <div id="page-transactions" class="page">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Transactions</h1>
+          <p class="page-subtitle">All your income and expenses.</p>
+        </div>
+      </div>
+      <div class="filters-bar">
+        <div class="search-wrapper">
+          <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="search-input" id="txn-search" placeholder="Search merchants or categories..." oninput="debounce(loadTransactions, 300)()" />
+        </div>
+        <div class="filter-chips">
+          <button class="chip active" data-filter-type="all">All</button>
+          <button class="chip" data-filter-type="income">Income Only</button>
+          <button class="chip" data-filter-type="expense">Expenses Only</button>
+        </div>
+      </div>
+      <div id="all-txn-list"></div>
+    </div>
+
+
+    <!-- BUDGETS PAGE -->
+    <div id="page-budgets" class="page">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Budgets</h1>
+          <p class="page-subtitle">Track spending limits by category.</p>
+        </div>
+        <button class="btn-primary" onclick="openBudgetModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Budget Limit
+        </button>
+      </div>
+
+      <div class="budget-summary-row" id="budget-summary">
+        <!-- Populated via JS -->
+      </div>
+
+      <div class="budget-grid" id="budget-list">
+        <!-- Populated via JS -->
+      </div>
+    </div>
+
+
+    <!-- SETTINGS PAGE -->
+    <div id="page-settings" class="page">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Settings</h1>
+          <p class="page-subtitle">Manage your account and preferences.</p>
+        </div>
+      </div>
+
+      <div class="settings-grid">
+        <div class="settings-card profile-settings-card">
+          <div class="profile-hero">
+            <div class="profile-avatar-large" id="st-user-initial">A</div>
+            <div class="profile-hero-info">
+              <div class="profile-name" id="st-user-name">Alex Johnson</div>
+              <div class="profile-email" id="st-user-email">alex@example.com</div>
+              <div class="profile-badge">Pro Member</div>
+            </div>
+            <div class="profile-stats">
+              <div class="profile-stat">
+                <span class="ps-value" id="st-total-txns">0</span>
+                <span class="ps-label">Transactions</span>
+              </div>
+            </div>
+          </div>
+
+          <h3 class="settings-card-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Security & Account
+          </h3>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <span class="settings-row-label">Sign out</span>
+              <span class="settings-row-desc">Log out of your Finlytics account on this device.</span>
+            </div>
+            <button class="btn-outline" onclick="handleLogout()">Sign Out</button>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <h3 class="settings-card-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            Preferences
+          </h3>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <span class="settings-row-label">Primary Currency</span>
+              <span class="settings-row-desc">Affects all monetary values.</span>
+            </div>
+            <select class="settings-select" id="setting-currency" onchange="updatePref('currency', this.value)">
+              <!-- Populated via JS -->
+            </select>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <span class="settings-row-label">Dark Mode</span>
+              <span class="settings-row-desc">Switch between light and dark themes.</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="setting-theme" onchange="updateTheme(this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Custom Categories Manager (Simple link to trigger modal) -->
+        <div class="settings-card">
+          <h3 class="settings-card-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            Custom Categories
+          </h3>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <span class="settings-row-label">Manage Categories</span>
+              <span class="settings-row-desc">Create personalized categories for income and expenses.</span>
+            </div>
+            <button class="btn-outline" onclick="openCreateCategoryModal()">Create New</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Floating Action Button -->
+<button class="fab" onclick="openTxnModal()" title="Add Transaction">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+</button>
+
+<!-- ── MODALS ── -->
+
+<!-- 1. ADD TRANSACTION MODAL -->
+<div class="modal-overlay" id="txn-modal-overlay" onclick="closeModal('txn-modal-overlay')">
+  <div class="modal-panel" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2 class="modal-title">New Transaction</h2>
+      <button class="modal-close" onclick="closeModal('txn-modal-overlay')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <form id="txn-form" style="display:flex; flex-direction:column; gap:24px;">
+        
+        <div class="type-toggle">
+          <button type="button" class="type-btn active" id="type-expense" onclick="setTxnType('expense')">Expense</button>
+          <button type="button" class="type-btn" id="type-income" onclick="setTxnType('income')">Income</button>
+        </div>
+        <input type="hidden" id="txn-type" value="expense" />
+
+        <div class="amount-input-wrapper">
+          <span class="currency-symbol" id="txn-sym">$</span>
+          <input type="number" step="0.01" class="amount-input" id="txn-amount" placeholder="0.00" required autofocus />
+        </div>
+
+        <div>
+          <label class="field-label">Category</label>
+          <div class="category-grid" id="txn-cat-grid">
+            <!-- populated via js -->
+          </div>
+          <input type="hidden" id="txn-category" required />
+        </div>
+
+        <div class="form-group">
+          <label class="field-label">Merchant / Title</label>
+          <input type="text" class="form-input" id="txn-merchant" placeholder="e.g. Whole Foods" required />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="field-label">Date</label>
+            <input type="date" class="form-input" id="txn-date" required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="field-label">Notes (Optional)</label>
+          <textarea class="form-input form-textarea" id="txn-notes" placeholder="Any details..."></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary" type="submit" form="txn-form">Save Transaction</button>
+    </div>
+  </div>
+</div>
+
+<!-- 2. ADD BUDGET LIMIT MODAL -->
+<div class="modal-overlay" id="budget-modal-overlay" onclick="closeModal('budget-modal-overlay')">
+  <div class="modal-panel" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2 class="modal-title">Set Category Budget</h2>
+      <button class="modal-close" onclick="closeModal('budget-modal-overlay')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <form id="budget-form" style="display:flex; flex-direction:column; gap:24px;">
+        <div class="amount-input-wrapper">
+          <span class="currency-symbol" id="budget-sym">$</span>
+          <input type="number" step="0.01" class="amount-input" id="budget-limit" placeholder="0.00" required />
+        </div>
+        <div class="form-group">
+          <label class="field-label">Category</label>
+          <select class="form-input" id="budget-category" required style="appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'10\' height=\'6\'%3E%3Cpath d=\'M1 1l4 4 4-4\' stroke=\'%23475569\' stroke-width=\'1.5\' fill=\'none\' stroke-linecap=\'round\'/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 16px center;">
+            <!-- pop JS -->
+          </select>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary" type="submit" form="budget-form">Save Budget</button>
+    </div>
+  </div>
+</div>
+
+<!-- 3. MONTHLY OVERARCHING BUDGET MODAL (Centered) -->
+<div class="modal-overlay center" id="monthly-budget-modal-overlay" onclick="closeModal('monthly-budget-modal-overlay')">
+  <div class="modal-panel" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2 class="modal-title">Monthly Target</h2>
+      <button class="modal-close" onclick="closeModal('monthly-budget-modal-overlay')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body" style="text-align:center;">
+      <p style="color:var(--text-secondary); margin-bottom:16px;">Set a total spending limit for this month across all categories.</p>
+      <form id="monthly-budget-form">
+        <div class="amount-input-wrapper" style="margin-bottom:24px;">
+          <span class="currency-symbol" id="mb-sym">$</span>
+          <input type="number" step="1" class="amount-input" id="mb-amount" placeholder="3000" required />
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary" style="width:100%" type="submit" form="monthly-budget-form">Save Target</button>
+    </div>
+  </div>
+</div>
+
+<!-- 4. CREATE CUSTOM CATEGORY MODAL (Centered) -->
+<div class="modal-overlay center" id="create-cat-modal-overlay" onclick="closeModal('create-cat-modal-overlay')">
+  <div class="modal-panel" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2 class="modal-title">New Category</h2>
+      <button class="modal-close" onclick="closeModal('create-cat-modal-overlay')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <form id="create-cat-form" style="display:flex; flex-direction:column; gap:20px;">
+        <div class="type-toggle">
+          <button type="button" class="type-btn active" id="cc-type-expense" onclick="setCcType('expense')">Expense</button>
+          <button type="button" class="type-btn" id="cc-type-income" onclick="setCcType('income')">Income</button>
+        </div>
+        <input type="hidden" id="cc-type" value="expense" />
+
+        <div class="form-row">
+          <div class="form-group" style="flex: 0 0 80px;">
+            <label class="field-label">Emoji</label>
+            <input type="text" class="form-input" id="cc-emoji" value="🏷" style="font-size:24px; text-align:center; padding:8px;" required maxlength="2" />
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label class="field-label">Category Name</label>
+            <input type="text" class="form-input" id="cc-name" placeholder="e.g. Subscriptions" required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="field-label">Color Theme</label>
+          <div class="color-picker" id="cc-colors">
+            <div class="color-swatch selected" data-color="#10B981" data-bg="rgba(16,185,129,0.12)" style="background:#10B981;"></div>
+            <div class="color-swatch" data-color="#3B82F6" data-bg="rgba(59,130,246,0.12)" style="background:#3B82F6;"></div>
+            <div class="color-swatch" data-color="#8B5CF6" data-bg="rgba(139,92,246,0.12)" style="background:#8B5CF6;"></div>
+            <div class="color-swatch" data-color="#EC4899" data-bg="rgba(236,72,153,0.12)" style="background:#EC4899;"></div>
+            <div class="color-swatch" data-color="#EF4444" data-bg="rgba(239,68,68,0.12)" style="background:#EF4444;"></div>
+            <div class="color-swatch" data-color="#F59E0B" data-bg="rgba(245,158,11,0.12)" style="background:#F59E0B;"></div>
+            <div class="color-swatch" data-color="#06B6D4" data-bg="rgba(6,182,212,0.12)" style="background:#06B6D4;"></div>
+            <div class="color-swatch" data-color="#14B8A6" data-bg="rgba(20,184,166,0.12)" style="background:#14B8A6;"></div>
+            <div class="color-swatch" data-color="#64748B" data-bg="rgba(100,116,139,0.12)" style="background:#64748B;"></div>
+          </div>
+          <input type="hidden" id="cc-color-val" value="#10B981" />
+          <input type="hidden" id="cc-bg-val" value="rgba(16,185,129,0.12)" />
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary" style="width:100%" type="submit" form="create-cat-form">Create Category</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Generate floating symbols -->
+<script>
+  function generateSymbols() {
+    const container = document.getElementById('bg-symbols');
+    const symbols = ['$', '€', '£', '¥', '₹', 'C$', 'A$'];
+    for(let i = 0; i < 25; i++) {
+      const el = document.createElement('div');
+      el.className = 'bg-symbol';
+      el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+      el.style.left = Math.random() * 100 + 'vw';
+      el.style.fontSize = (Math.random() * 40 + 20) + 'px';
+      el.style.animationDuration = (Math.random() * 10 + 10) + 's';
+      el.style.animationDelay = (Math.random() * 10) + 's';
+      container.appendChild(el);
+    }
+  }
+  generateSymbols();
+</script>
+
+<!-- Main logic -->
+<script src="app.js"></script>
+
+</body>
+</html>

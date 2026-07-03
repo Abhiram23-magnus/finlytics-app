@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Finlytics — Sign In</title>
+  <meta name="description" content="Sign in to Finlytics — your smart expense tracker."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #10B981; --primary-light: rgba(16, 185, 129, 0.12);
+      --bg: #F8FAFC; --surface: #FFFFFF; --surface-2: #F1F5F9;
+      --border: #E2E8F0;
+      --text-primary: #111827; --text-secondary: #475569; --text-muted: #64748B;
+      --green: #10B981; --red: #EF4444;
+      --radius-md: 12px; --radius-lg: 16px; --radius-full: 9999px;
+    }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg); color: var(--text-primary);
+      min-height: 100vh; -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Dark Theme Overrides ── */
+    [data-theme="dark"] {
+      --bg: #050505; --surface: #121212; --surface-2: #1E1E1E;
+      --border: #2A2A2A;
+      --text-primary: #F8FAFC; --text-secondary: #94A3B8; --text-muted: #64748B;
+    }
+
+    /* ── Floating Symbols ── */
+    .bg-symbols {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      overflow: hidden; opacity: 0.3;
+    }
+    .bg-symbol {
+      position: absolute; font-family: 'Space Grotesk', sans-serif; font-weight: 800;
+      color: var(--primary); opacity: 0.15; animation: floatUp linear infinite; user-select: none;
+    }
+    [data-theme="dark"] .bg-symbols { opacity: 0.15; }
+    @keyframes floatUp {
+      0% { transform: translateY(110vh) rotate(0deg); }
+      100% { transform: translateY(-10vh) rotate(360deg); }
+    }
+
+    /* ── Layout ── */
+    .auth-layout {
+      position: relative; z-index: 10;
+      display: grid; grid-template-columns: 1fr 520px;
+      min-height: 100vh;
+    }
+
+    /* ── Left Hero ── */
+    .auth-hero {
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: flex-start;
+      padding: 60px 72px;
+      position: relative;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+    }
+    .hero-brand { display: flex; align-items: center; gap: 14px; margin-bottom: 60px; }
+    .hero-brand-icon {
+      width: 48px; height: 48px;
+      background: var(--primary);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center; color: white;
+      box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+    }
+    .hero-brand-name { font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 800; color: var(--text-primary); }
+    .hero-brand-name span { color: var(--primary); }
+
+    .hero-headline {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 48px; font-weight: 800; color: var(--text-primary);
+      line-height: 1.1; letter-spacing: -1.5px; margin-bottom: 20px; max-width: 440px;
+    }
+    .hero-headline .highlight { color: var(--primary); }
+    .hero-desc { font-size: 16px; color: var(--text-secondary); line-height: 1.7; max-width: 380px; margin-bottom: 52px; }
+
+    .hero-stats { display: flex; gap: 40px; }
+    .hero-stat-val { display: block; font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 800; color: var(--primary); }
+    .hero-stat-lbl { display: block; font-size: 13px; color: var(--text-muted); margin-top: 4px; font-weight: 500; }
+
+    /* ── Right Panel ── */
+    .auth-panel {
+      background: var(--bg);
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 48px 52px; overflow-y: auto;
+    }
+    .auth-form-header { margin-bottom: 32px; }
+    .auth-form-title { font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.5px; margin-bottom: 8px; }
+    .auth-form-subtitle { font-size: 15px; color: var(--text-secondary); }
+    .auth-form-subtitle a { color: var(--primary); font-weight: 600; cursor: pointer; text-decoration: none; }
+    .auth-form-subtitle a:hover { text-decoration: underline; }
+
+    /* Tabs */
+    .auth-tabs { display: grid; grid-template-columns: 1fr 1fr 1fr; background: #E2E8F0; border-radius: var(--radius-md); padding: 4px; gap: 4px; margin-bottom: 32px; }
+    .auth-tab { padding: 12px; text-align: center; font-size: 14px; font-weight: 600; color: var(--text-secondary); border-radius: 10px; cursor: pointer; transition: all .2s; border: none; background: none; }
+    .auth-tab.active { background: var(--surface); color: var(--text-primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+    /* Form */
+    .auth-form { display: flex; flex-direction: column; gap: 20px; }
+    .auth-form-group { display: flex; flex-direction: column; gap: 8px; }
+    .auth-label { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+    .auth-input {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: 14px 16px;
+      font-size: 15px; color: var(--text-primary);
+      outline: none; width: 100%;
+      transition: all .2s;
+    }
+    .auth-input::placeholder { color: #94A3B8; }
+    .auth-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+
+    .auth-error { background: #FEF2F2; color: #DC2626; border: 1px solid #FCA5A5; border-radius: var(--radius-md); padding: 14px 16px; font-size: 14px; font-weight: 500; display: none; }
+    .auth-error.visible { display: block; }
+    .auth-success { background: #F0FDF4; color: #16A34A; border: 1px solid #86EFAC; border-radius: var(--radius-md); padding: 14px 16px; font-size: 14px; font-weight: 500; display: none; }
+    .auth-success.visible { display: block; }
+
+    .auth-submit {
+      width: 100%; background: var(--primary);
+      color: white; border: none; border-radius: var(--radius-full);
+      padding: 16px 24px; font-size: 16px; font-weight: 600;
+      cursor: pointer; transition: all .2s;
+      box-shadow: 0 4px 12px rgba(16,185,129,0.2); margin-top: 8px;
+    }
+    .auth-submit:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(16,185,129,0.3); }
+    .auth-submit:active { transform: translateY(0); }
+    .auth-submit:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+
+    .auth-divider { display: flex; align-items: center; gap: 12px; color: var(--text-muted); font-size: 13px; margin: 4px 0; font-weight: 500; }
+    .auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    .demo-pill {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      background: var(--surface); border: 2px dashed #CBD5E1;
+      border-radius: var(--radius-md); padding: 14px 16px;
+      color: var(--text-secondary); font-size: 14px; font-weight: 600; cursor: pointer;
+      transition: all .2s;
+    }
+    .demo-pill:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+
+    .forgot-info {
+      background: var(--surface-2); border-radius: var(--radius-md); padding: 16px;
+      font-size: 14px; color: var(--text-secondary); line-height: 1.5;
+      display: flex; align-items: flex-start; gap: 12px;
+    }
+    .forgot-info svg { color: var(--primary); flex-shrink: 0; margin-top: 2px; }
+
+    @media (max-width: 900px) {
+      .auth-layout { grid-template-columns: 1fr; }
+      .auth-hero { display: none; }
+      .auth-panel { padding: 40px 24px; }
+    }
+    @media (max-width: 480px) { .auth-panel { padding: 32px 20px; } }
+  </style>
+</head>
+<body>
+
+<div class="bg-symbols" id="bg-symbols"></div>
+<button id="login-theme-btn" onclick="toggleLoginTheme()" style="position: absolute; top: 20px; right: 20px; z-index: 100; background: var(--surface); color: var(--text-primary); border: 1px solid var(--border); padding: 8px 16px; border-radius: var(--radius-full); cursor: pointer; font-weight: bold; box-shadow: var(--shadow-sm); transition: all var(--transition);">
+  Toggle Dark Mode
+</button>
+<div class="auth-layout">
+  <!-- Hero -->
+  <div class="auth-hero">
+    <div class="hero-brand">
+      <div class="hero-brand-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+          <polyline points="17 6 23 6 23 12"/>
+        </svg>
+      </div>
+      <span class="hero-brand-name">Fin<span>lytics</span></span>
+    </div>
+    <h1 class="hero-headline">Money, <span class="highlight">tracked.</span><br/>Goals, <span class="highlight">achieved.</span></h1>
+    <p class="hero-desc">Set your monthly budget, track every spend across every category, and understand your money like never before.</p>
+    <div class="hero-stats">
+      <div><span class="hero-stat-val">50+</span><span class="hero-stat-lbl">World currencies</span></div>
+      <div><span class="hero-stat-val">∞</span><span class="hero-stat-lbl">Custom categories</span></div>
+    </div>
+  </div>
+
+  <!-- Auth Panel -->
+  <div class="auth-panel">
+    <div class="auth-form-header">
+      <h2 class="auth-form-title" id="form-title">Welcome back</h2>
+      <p class="auth-form-subtitle" id="form-subtitle">
+        No account? <a onclick="switchTab('register')">Create one free →</a>
+      </p>
+    </div>
+
+    <div class="auth-tabs" id="auth-tabs">
+      <button class="auth-tab active" id="tab-login"    onclick="switchTab('login')">Sign In</button>
+      <button class="auth-tab"        id="tab-register" onclick="switchTab('register')">Register</button>
+      <button class="auth-tab"        id="tab-forgot"   onclick="switchTab('forgot')">Forgot?</button>
+    </div>
+
+    <div class="auth-error"   id="auth-error"></div>
+    <div class="auth-success" id="auth-success"></div>
+
+    <!-- LOGIN -->
+    <form class="auth-form" id="login-form" onsubmit="handleLogin(event)">
+      <div class="auth-form-group">
+        <label class="auth-label" for="login-email">Email</label>
+        <input type="email" class="auth-input" id="login-email" placeholder="you@email.com" autocomplete="email" required/>
+      </div>
+      <div class="auth-form-group">
+        <label class="auth-label" for="login-password">Password</label>
+        <input type="password" class="auth-input" id="login-password" placeholder="••••••••" autocomplete="current-password" required/>
+      </div>
+      <button type="submit" class="auth-submit" id="login-btn">Sign In →</button>
+      <div class="auth-divider">or</div>
+      <div class="demo-pill" onclick="fillDemo()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        Try the demo account
+      </div>
+    </form>
+
+    <!-- REGISTER -->
+    <form class="auth-form" id="register-form" style="display:none" onsubmit="handleRegister(event)">
+      <div class="auth-form-group">
+        <label class="auth-label" for="reg-name">Full Name</label>
+        <input type="text" class="auth-input" id="reg-name" placeholder="Alex Johnson" autocomplete="name" required/>
+      </div>
+      <div class="auth-form-group">
+        <label class="auth-label" for="reg-email">Email</label>
+        <input type="email" class="auth-input" id="reg-email" placeholder="you@email.com" autocomplete="email" required/>
+      </div>
+      <div class="auth-form-group">
+        <label class="auth-label" for="reg-password">Password</label>
+        <input type="password" class="auth-input" id="reg-password" placeholder="Min. 6 characters" autocomplete="new-password" required minlength="6"/>
+      </div>
+      <div class="auth-form-group">
+        <label class="auth-label" for="reg-currency">Your Currency</label>
+        <select class="auth-input" id="reg-currency" required style="appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'8\'%3E%3Cpath d=\'M1 1l5 5 5-5\' stroke=\'%2364748B\' stroke-width=\'2\' fill=\'none\' stroke-linecap=\'round\'/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 16px center;"></select>
+      </div>
+      <button type="submit" class="auth-submit" id="reg-btn">Create Account →</button>
+    </form>
+
+    <!-- FORGOT PASSWORD -->
+    <form class="auth-form" id="forgot-form" style="display:none" onsubmit="handleForgot(event)">
+      <div class="forgot-info">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Enter your email and choose a new password. No email sent — instant reset.
+      </div>
+      <div class="auth-form-group">
+        <label class="auth-label" for="forgot-email">Email Address</label>
+        <input type="email" class="auth-input" id="forgot-email" placeholder="you@email.com" required/>
+      </div>
+      <div class="auth-form-group" id="forgot-name-confirm" style="display:none">
+        <label class="auth-label">Account Found</label>
+        <div style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:12px;padding:14px 16px;font-size:15px;font-weight:600;color:#16A34A;" id="forgot-name-display"></div>
+      </div>
+      <div class="auth-form-group" id="forgot-pw-group" style="display:none">
+        <label class="auth-label" for="forgot-new-pw">New Password</label>
+        <input type="password" class="auth-input" id="forgot-new-pw" placeholder="Min. 6 characters" minlength="6"/>
+      </div>
+      <button type="submit" class="auth-submit" id="forgot-btn">Find Account →</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Currencies
+  const CURRENCIES = [
+    {code:'USD',symbol:'$',name:'US Dollar',flag:'🇺🇸'},
+    {code:'EUR',symbol:'€',name:'Euro',flag:'🇪🇺'},
+    {code:'GBP',symbol:'£',name:'British Pound',flag:'🇬🇧'},
+    {code:'INR',symbol:'₹',name:'Indian Rupee',flag:'🇮🇳'},
+    {code:'JPY',symbol:'¥',name:'Japanese Yen',flag:'🇯🇵'},
+    {code:'CAD',symbol:'C$',name:'Canadian Dollar',flag:'🇨🇦'},
+    {code:'AUD',symbol:'A$',name:'Australian Dollar',flag:'🇦🇺'}
+  ]; // Condensed for brevity in the template
+  const sel = document.getElementById('reg-currency');
+  CURRENCIES.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.code;
+    opt.textContent = `${c.flag} ${c.name} (${c.symbol})`;
+    sel.appendChild(opt);
+  });
+
+  let activeTab = 'login';
+  let forgotStep = 1;
+
+  function switchTab(tab) {
+    activeTab = tab;
+    forgotStep = 1;
+    ['login','register','forgot'].forEach(t => {
+      document.getElementById('tab-' + t)?.classList.toggle('active', t === tab);
+      document.getElementById(t + '-form').style.display = t === tab ? 'flex' : 'none';
+    });
+    clearMessages();
+
+    const titles = { login: 'Welcome back', register: 'Create account', forgot: 'Reset password' };
+    const subs = {
+      login: `No account? <a onclick="switchTab('register')">Create one free →</a>`,
+      register: `Have an account? <a onclick="switchTab('login')">Sign in →</a>`,
+      forgot: `Remembered it? <a onclick="switchTab('login')">Sign in →</a>`
+    };
+    document.getElementById('form-title').textContent = titles[tab];
+    document.getElementById('form-subtitle').innerHTML = subs[tab];
+
+    if (tab === 'forgot') {
+      document.getElementById('forgot-name-confirm').style.display = 'none';
+      document.getElementById('forgot-pw-group').style.display = 'none';
+      document.getElementById('forgot-btn').textContent = 'Find Account →';
+    }
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('auth-error');
+    el.textContent = msg; el.classList.add('visible');
+    document.getElementById('auth-success').classList.remove('visible');
+  }
+  function showSuccess(msg) {
+    const el = document.getElementById('auth-success');
+    el.textContent = msg; el.classList.add('visible');
+    document.getElementById('auth-error').classList.remove('visible');
+  }
+  function clearMessages() {
+    document.getElementById('auth-error').classList.remove('visible');
+    document.getElementById('auth-success').classList.remove('visible');
+  }
+
+  function setLoading(btnId, loading, text) {
+    const btn = document.getElementById(btnId);
+    btn.disabled = loading;
+    btn.textContent = loading ? 'Please wait…' : text;
+  }
+
+  async function handleLogin(e) {
+    e.preventDefault(); clearMessages();
+    setLoading('login-btn', true, 'Sign In →');
+    try {
+      const res  = await fetch('/api/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: document.getElementById('login-email').value, password: document.getElementById('login-password').value }), credentials:'include' });
+      const data = await res.json();
+      if (!res.ok) { showError(data.error || 'Login failed'); return; }
+      window.location.href = '/';
+    } catch { showError('Connection error.'); }
+    finally { setLoading('login-btn', false, 'Sign In →'); }
+  }
+
+  async function handleRegister(e) {
+    e.preventDefault(); clearMessages();
+    setLoading('reg-btn', true, 'Create Account →');
+    try {
+      const res  = await fetch('/api/auth/register', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name: document.getElementById('reg-name').value, email: document.getElementById('reg-email').value, password: document.getElementById('reg-password').value, currency: document.getElementById('reg-currency').value }), credentials:'include' });
+      const data = await res.json();
+      if (!res.ok) { showError(data.error || 'Registration failed'); return; }
+      window.location.href = '/';
+    } catch { showError('Connection error.'); }
+    finally { setLoading('reg-btn', false, 'Create Account →'); }
+  }
+
+  async function handleForgot(e) {
+    e.preventDefault(); clearMessages();
+    if (forgotStep === 1) {
+      setLoading('forgot-btn', true, 'Find Account →');
+      try {
+        const res  = await fetch('/api/auth/find-account', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: document.getElementById('forgot-email').value }), credentials:'include' });
+        const data = await res.json();
+        if (!res.ok) { showError(data.error || 'Account not found'); return; }
+        document.getElementById('forgot-name-display').textContent = '👤 ' + data.name;
+        document.getElementById('forgot-name-confirm').style.display = 'flex';
+        document.getElementById('forgot-pw-group').style.display = 'flex';
+        document.getElementById('forgot-btn').textContent = 'Reset Password →';
+        document.getElementById('forgot-new-pw').required = true;
+        forgotStep = 2;
+        showSuccess('Account found! Set your new password below.');
+      } catch { showError('Connection error.'); }
+      finally { setLoading('forgot-btn', false, 'Find Account →'); }
+    } else {
+      setLoading('forgot-btn', true, 'Reset Password →');
+      try {
+        const res  = await fetch('/api/auth/reset-password', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: document.getElementById('forgot-email').value, newPassword: document.getElementById('forgot-new-pw').value }), credentials:'include' });
+        const data = await res.json();
+        if (!res.ok) { showError(data.error || 'Reset failed'); return; }
+        showSuccess('✅ Password reset! Signing you in…');
+        setTimeout(() => window.location.href = '/', 1500);
+      } catch { showError('Connection error.'); }
+      finally { setLoading('forgot-btn', false, 'Reset Password →'); }
+    }
+  }
+
+  function fillDemo() {
+    switchTab('login');
+    document.getElementById('login-email').value    = 'demo@finlytics.app';
+    document.getElementById('login-password').value = 'demo1234';
+  }
+
+  // Generate floating symbols
+  function generateSymbols() {
+    const container = document.getElementById('bg-symbols');
+    const symbols = ['$', '€', '£', '¥', '₹', 'C$', 'A$'];
+    for(let i = 0; i < 25; i++) {
+      const el = document.createElement('div');
+      el.className = 'bg-symbol';
+      el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+      el.style.left = Math.random() * 100 + 'vw';
+      el.style.fontSize = (Math.random() * 40 + 20) + 'px';
+      el.style.animationDuration = (Math.random() * 10 + 10) + 's';
+      el.style.animationDelay = (Math.random() * 10) + 's';
+      container.appendChild(el);
+    }
+  }
+  generateSymbols();
+
+  // Dark mode toggle for Login page
+  function toggleLoginTheme() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  }
+</script>
+</body>
+</html>
