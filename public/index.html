@@ -39,7 +39,7 @@
       </a>
       
       <!-- Quick Theme Toggle -->
-      <a href="#" class="nav-item" id="sidebar-theme-toggle" onclick="toggleThemeGlobal(event)">
+      <a href="#" class="nav-item" id="sidebar-theme-toggle" data-action="toggle-theme">
         <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
         Toggle Theme
       </a>
@@ -72,7 +72,7 @@
       <div class="budget-overview-card" id="bov-card" style="display:none">
         <div class="bov-header">
           <span class="bov-title">Monthly Budget Tracker</span>
-          <button class="small-btn btn-outline" onclick="openMonthlyBudgetModal()">Adjust Budget</button>
+          <button class="small-btn btn-outline" data-action="open-monthly-budget">Adjust Budget</button>
         </div>
         <div class="bov-numbers">
           <div class="bov-num">
@@ -168,7 +168,7 @@
 
       <div class="section-header">
         <h2 class="section-title">Recent Transactions</h2>
-        <a class="btn-link" onclick="document.querySelector('[data-page=\'transactions\']').click()">View All</a>
+        <a class="btn-link" href="#" data-action="view-all-transactions">View All</a>
       </div>
       <div class="transactions-list" id="recent-txn-list">
         <!-- populated via js -->
@@ -187,7 +187,7 @@
       <div class="filters-bar">
         <div class="search-wrapper">
           <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" class="search-input" id="txn-search" placeholder="Search merchants or categories..." oninput="debounce(loadTransactions, 300)()" />
+          <input type="text" class="search-input" id="txn-search" placeholder="Search merchants or categories..." maxlength="100" />
         </div>
         <div class="filter-chips">
           <button class="chip active" data-filter-type="all">All</button>
@@ -206,7 +206,7 @@
           <h1 class="page-title">Budgets</h1>
           <p class="page-subtitle">Track spending limits by category.</p>
         </div>
-        <button class="btn-primary" onclick="openBudgetModal()">
+        <button class="btn-primary" data-action="open-budget-modal">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           New Budget Limit
         </button>
@@ -257,7 +257,7 @@
               <span class="settings-row-label">Sign out</span>
               <span class="settings-row-desc">Log out of your Finlytics account on this device.</span>
             </div>
-            <button class="btn-outline" onclick="handleLogout()">Sign Out</button>
+            <button class="btn-outline" data-action="logout">Sign Out</button>
           </div>
         </div>
 
@@ -271,16 +271,17 @@
               <span class="settings-row-label">Primary Currency</span>
               <span class="settings-row-desc">Affects all monetary values.</span>
             </div>
-            <select class="settings-select" id="setting-currency" onchange="updatePref('currency', this.value)">
+            <select class="settings-select" id="setting-currency">
               <!-- Populated via JS -->
             </select>
+          </div>
           <div class="settings-row">
             <div class="settings-row-info">
               <span class="settings-row-label">Dark Mode</span>
               <span class="settings-row-desc">Switch between light and dark themes.</span>
             </div>
             <label class="toggle-switch">
-              <input type="checkbox" id="setting-theme" onchange="updateTheme(this.checked)">
+              <input type="checkbox" id="setting-theme">
               <span class="toggle-slider"></span>
             </label>
           </div>
@@ -297,8 +298,9 @@
               <span class="settings-row-label">Manage Categories</span>
               <span class="settings-row-desc">Create personalized categories for income and expenses.</span>
             </div>
-            <button class="btn-outline" onclick="openCreateCategoryModal()">Create New</button>
+            <button class="btn-outline" data-action="open-create-category">Create New</button>
           </div>
+          <div class="category-manage-list" id="category-manage-list"></div>
         </div>
 
       </div>
@@ -307,31 +309,31 @@
 </div>
 
 <!-- Floating Action Button -->
-<button class="fab" onclick="openTxnModal()" title="Add Transaction">
+<button class="fab" data-action="open-txn-modal" title="Add Transaction">
   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
 </button>
 
 <!-- ── MODALS ── -->
 
 <!-- 1. ADD TRANSACTION MODAL -->
-<div class="modal-overlay" id="txn-modal-overlay" onclick="closeModal('txn-modal-overlay')">
-  <div class="modal-panel" onclick="event.stopPropagation()">
+<div class="modal-overlay" id="txn-modal-overlay" data-backdrop-close role="dialog" aria-modal="true">
+  <div class="modal-panel">
     <div class="modal-header">
-      <h2 class="modal-title">New Transaction</h2>
-      <button class="modal-close" onclick="closeModal('txn-modal-overlay')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <h2 class="modal-title" id="txn-modal-title">New Transaction</h2>
+      <button class="modal-close" type="button" data-action="close-modal" data-modal="txn-modal-overlay" aria-label="Close"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="modal-body">
       <form id="txn-form" style="display:flex; flex-direction:column; gap:24px;">
         
         <div class="type-toggle">
-          <button type="button" class="type-btn active" id="type-expense" onclick="setTxnType('expense')">Expense</button>
-          <button type="button" class="type-btn" id="type-income" onclick="setTxnType('income')">Income</button>
+          <button type="button" class="type-btn active" id="type-expense" data-action="set-txn-type" data-type="expense">Expense</button>
+          <button type="button" class="type-btn" id="type-income" data-action="set-txn-type" data-type="income">Income</button>
         </div>
         <input type="hidden" id="txn-type" value="expense" />
 
         <div class="amount-input-wrapper">
           <span class="currency-symbol" id="txn-sym">$</span>
-          <input type="number" step="0.01" class="amount-input" id="txn-amount" placeholder="0.00" required autofocus />
+          <input type="number" step="0.01" min="0.01" max="1000000000" inputmode="decimal" class="amount-input" id="txn-amount" placeholder="0.00" required autofocus />
         </div>
 
         <div>
@@ -344,7 +346,7 @@
 
         <div class="form-group">
           <label class="field-label">Merchant / Title</label>
-          <input type="text" class="form-input" id="txn-merchant" placeholder="e.g. Whole Foods" required />
+          <input type="text" class="form-input" id="txn-merchant" placeholder="e.g. Whole Foods" required maxlength="100" />
         </div>
 
         <div class="form-row">
@@ -356,28 +358,28 @@
 
         <div class="form-group">
           <label class="field-label">Notes (Optional)</label>
-          <textarea class="form-input form-textarea" id="txn-notes" placeholder="Any details..."></textarea>
+          <textarea class="form-input form-textarea" id="txn-notes" placeholder="Any details..." maxlength="500"></textarea>
         </div>
       </form>
     </div>
     <div class="modal-footer">
-      <button class="btn-primary" type="submit" form="txn-form">Save Transaction</button>
+      <button class="btn-primary" type="submit" form="txn-form" id="txn-save-btn">Save Transaction</button>
     </div>
   </div>
 </div>
 
 <!-- 2. ADD BUDGET LIMIT MODAL -->
-<div class="modal-overlay" id="budget-modal-overlay" onclick="closeModal('budget-modal-overlay')">
-  <div class="modal-panel" onclick="event.stopPropagation()">
+<div class="modal-overlay" id="budget-modal-overlay" data-backdrop-close role="dialog" aria-modal="true">
+  <div class="modal-panel">
     <div class="modal-header">
       <h2 class="modal-title">Set Category Budget</h2>
-      <button class="modal-close" onclick="closeModal('budget-modal-overlay')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <button class="modal-close" type="button" data-action="close-modal" data-modal="budget-modal-overlay" aria-label="Close"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="modal-body">
       <form id="budget-form" style="display:flex; flex-direction:column; gap:24px;">
         <div class="amount-input-wrapper">
           <span class="currency-symbol" id="budget-sym">$</span>
-          <input type="number" step="0.01" class="amount-input" id="budget-limit" placeholder="0.00" required />
+          <input type="number" step="0.01" min="0.01" max="1000000000" inputmode="decimal" class="amount-input" id="budget-limit" placeholder="0.00" required />
         </div>
         <div class="form-group">
           <label class="field-label">Category</label>
@@ -388,108 +390,93 @@
       </form>
     </div>
     <div class="modal-footer">
-      <button class="btn-primary" type="submit" form="budget-form">Save Budget</button>
+      <button class="btn-primary" type="submit" form="budget-form" id="budget-save-btn">Save Budget</button>
     </div>
   </div>
 </div>
 
 <!-- 3. MONTHLY OVERARCHING BUDGET MODAL (Centered) -->
-<div class="modal-overlay center" id="monthly-budget-modal-overlay" onclick="closeModal('monthly-budget-modal-overlay')">
-  <div class="modal-panel" onclick="event.stopPropagation()">
+<div class="modal-overlay center" id="monthly-budget-modal-overlay" data-backdrop-close role="dialog" aria-modal="true">
+  <div class="modal-panel">
     <div class="modal-header">
       <h2 class="modal-title">Monthly Target</h2>
-      <button class="modal-close" onclick="closeModal('monthly-budget-modal-overlay')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <button class="modal-close" type="button" data-action="close-modal" data-modal="monthly-budget-modal-overlay" aria-label="Close"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="modal-body" style="text-align:center;">
       <p style="color:var(--text-secondary); margin-bottom:16px;">Set a total spending limit for this month across all categories.</p>
       <form id="monthly-budget-form">
         <div class="amount-input-wrapper" style="margin-bottom:24px;">
           <span class="currency-symbol" id="mb-sym">$</span>
-          <input type="number" step="1" class="amount-input" id="mb-amount" placeholder="3000" required />
+          <input type="number" step="0.01" min="0.01" max="1000000000" inputmode="decimal" class="amount-input" id="mb-amount" placeholder="3000" required />
         </div>
       </form>
     </div>
     <div class="modal-footer">
-      <button class="btn-primary" style="width:100%" type="submit" form="monthly-budget-form">Save Target</button>
+      <button class="btn-primary" style="width:100%" type="submit" form="monthly-budget-form" id="mb-save-btn">Save Target</button>
     </div>
   </div>
 </div>
 
 <!-- 4. CREATE CUSTOM CATEGORY MODAL (Centered) -->
-<div class="modal-overlay center" id="create-cat-modal-overlay" onclick="closeModal('create-cat-modal-overlay')">
-  <div class="modal-panel" onclick="event.stopPropagation()">
+<div class="modal-overlay center" id="create-cat-modal-overlay" data-backdrop-close role="dialog" aria-modal="true">
+  <div class="modal-panel">
     <div class="modal-header">
       <h2 class="modal-title">New Category</h2>
-      <button class="modal-close" onclick="closeModal('create-cat-modal-overlay')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <button class="modal-close" type="button" data-action="close-modal" data-modal="create-cat-modal-overlay" aria-label="Close"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="modal-body">
       <form id="create-cat-form" style="display:flex; flex-direction:column; gap:20px;">
         <div class="type-toggle">
-          <button type="button" class="type-btn active" id="cc-type-expense" onclick="setCcType('expense')">Expense</button>
-          <button type="button" class="type-btn" id="cc-type-income" onclick="setCcType('income')">Income</button>
+          <button type="button" class="type-btn active" id="cc-type-expense" data-action="set-cc-type" data-type="expense">Expense</button>
+          <button type="button" class="type-btn" id="cc-type-income" data-action="set-cc-type" data-type="income">Income</button>
         </div>
         <input type="hidden" id="cc-type" value="expense" />
 
         <div class="form-row">
           <div class="form-group" style="flex: 0 0 80px;">
             <label class="field-label">Emoji</label>
-            <input type="text" class="form-input" id="cc-emoji" value="🏷" style="font-size:24px; text-align:center; padding:8px;" required maxlength="2" />
+            <input type="text" class="form-input" id="cc-emoji" value="🏷" style="font-size:24px; text-align:center; padding:8px;" required maxlength="8" />
           </div>
           <div class="form-group" style="flex: 1;">
             <label class="field-label">Category Name</label>
-            <input type="text" class="form-input" id="cc-name" placeholder="e.g. Subscriptions" required />
+            <input type="text" class="form-input" id="cc-name" placeholder="e.g. Subscriptions" required maxlength="40" />
           </div>
         </div>
 
         <div class="form-group">
           <label class="field-label">Color Theme</label>
           <div class="color-picker" id="cc-colors">
-            <div class="color-swatch selected" data-color="#10B981" data-bg="rgba(16,185,129,0.12)" style="background:#10B981;"></div>
-            <div class="color-swatch" data-color="#3B82F6" data-bg="rgba(59,130,246,0.12)" style="background:#3B82F6;"></div>
-            <div class="color-swatch" data-color="#8B5CF6" data-bg="rgba(139,92,246,0.12)" style="background:#8B5CF6;"></div>
-            <div class="color-swatch" data-color="#EC4899" data-bg="rgba(236,72,153,0.12)" style="background:#EC4899;"></div>
-            <div class="color-swatch" data-color="#EF4444" data-bg="rgba(239,68,68,0.12)" style="background:#EF4444;"></div>
-            <div class="color-swatch" data-color="#F59E0B" data-bg="rgba(245,158,11,0.12)" style="background:#F59E0B;"></div>
-            <div class="color-swatch" data-color="#06B6D4" data-bg="rgba(6,182,212,0.12)" style="background:#06B6D4;"></div>
-            <div class="color-swatch" data-color="#14B8A6" data-bg="rgba(20,184,166,0.12)" style="background:#14B8A6;"></div>
-            <div class="color-swatch" data-color="#64748B" data-bg="rgba(100,116,139,0.12)" style="background:#64748B;"></div>
+            <div class="color-swatch selected" data-color="#10B981" style="background:#10B981;"></div>
+            <div class="color-swatch" data-color="#3B82F6" style="background:#3B82F6;"></div>
+            <div class="color-swatch" data-color="#8B5CF6" style="background:#8B5CF6;"></div>
+            <div class="color-swatch" data-color="#EC4899" style="background:#EC4899;"></div>
+            <div class="color-swatch" data-color="#EF4444" style="background:#EF4444;"></div>
+            <div class="color-swatch" data-color="#F59E0B" style="background:#F59E0B;"></div>
+            <div class="color-swatch" data-color="#06B6D4" style="background:#06B6D4;"></div>
+            <div class="color-swatch" data-color="#14B8A6" style="background:#14B8A6;"></div>
+            <div class="color-swatch" data-color="#64748B" style="background:#64748B;"></div>
           </div>
           <input type="hidden" id="cc-color-val" value="#10B981" />
-          <input type="hidden" id="cc-bg-val" value="rgba(16,185,129,0.12)" />
         </div>
       </form>
     </div>
     <div class="modal-footer">
-      <button class="btn-primary" style="width:100%" type="submit" form="create-cat-form">Create Category</button>
+      <button class="btn-primary" style="width:100%" type="submit" form="create-cat-form" id="cc-save-btn">Create Category</button>
     </div>
   </div>
 </div>
 
-<div id="toast" class="toast"></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Icon templates (cloned by app.js; never built from strings) -->
+<template id="icon-trash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></template>
+<template id="icon-edit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></template>
+<template id="icon-calendar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></template>
+<template id="icon-check"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></template>
+<template id="icon-alert"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></template>
 
-<!-- Generate floating symbols -->
-<script>
-  function generateSymbols() {
-    const container = document.getElementById('bg-symbols');
-    const symbols = ['$', '€', '£', '¥', '₹', 'C$', 'A$'];
-    for(let i = 0; i < 25; i++) {
-      const el = document.createElement('div');
-      el.className = 'bg-symbol';
-      el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
-      el.style.left = Math.random() * 100 + 'vw';
-      el.style.fontSize = (Math.random() * 40 + 20) + 'px';
-      el.style.animationDuration = (Math.random() * 10 + 10) + 's';
-      el.style.animationDelay = (Math.random() * 10) + 's';
-      container.appendChild(el);
-    }
-  }
-  generateSymbols();
-</script>
-
-<!-- Main logic -->
+<script src="vendor/chart.umd.min.js"></script>
+<script src="common.js"></script>
 <script src="app.js"></script>
 
 </body>

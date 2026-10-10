@@ -1,673 +1,702 @@
 // ============================================================
-// FINLYTICS — Main App Logic (Light Theme & Custom Categories)
+// FINLYTICS — Dashboard app logic
 // ============================================================
+// All user-controlled values are rendered with textContent / DOM APIs
+// (see h() in common.js). Colors are validated before reaching CSS.
+'use strict';
 
 // ── State ──
-let currentUser  = null;
-let currentMonth = '';
-let currentCurrencySymbol = '$';
+let currentUser   = null;
+let currentMonth  = localMonthString();
 let categoryChartInstance = null;
 let trendChartInstance    = null;
+let categoriesCache       = [];
+let editingTxnId          = null; // null → creating a new transaction
 
-// Chart Colors requested: Green, Blue, Purple, Amber, Cyan
-const CHART_COLORS = [
-  '#10B981', // Emerald (Green)
-  '#3B82F6', // Blue
-  '#8B5CF6', // Purple
-  '#F59E0B', // Amber
-  '#06B6D4', // Cyan
-  '#EC4899', // Pink
-  '#F43F5E', // Rose
-  '#14B8A6'  // Teal
-];
+const CHART_COLORS = ['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#06B6D4', '#EC4899', '#F43F5E', '#14B8A6'];
+
+const $ = id => document.getElementById(id);
+const money = amount => formatMoney(amount, currentUser && currentUser.currency);
+const symbol = () => currencyInfo(currentUser && currentUser.currency).symbol;
+
+// Any 401 means the session expired or was revoked: go back to sign-in.
+Api.onUnauthorized = () => { window.location.href = '/login.html?expired=1'; };
+
+/** Runs a loader and turns failures into a toast instead of a broken page. */
+async function safely(task, message) {
+  try {
+    return await task();
+  } catch (err) {
+    if (err && err.status === 401) return undefined; // redirecting
+    showToast((err && err.message) || message || 'Something went wrong.', 'error');
+    return undefined;
+  }
+}
 
 // ── Init ──
 document.addEventListener('DOMContentLoaded', async () => {
-  const d = new Date();
-  currentMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-  
-  document.getElementById('dash-date').innerHTML = `
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-    ${d.toLocaleString('default', { month: 'long', year: 'numeric' })}
-  `;
-
+  $('dash-date').replaceChildren(icon('icon-calendar'), ' ' + new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' }));
+  bindEvents();
   await checkAuth();
-  
-  // Setup navigation
-  document.querySelectorAll('.nav-item').forEach(item => {
-    item.addEventListener('click', (e) => {
-      e.preventDefault();
-      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-      e.currentTarget.classList.add('active');
-      const page = e.currentTarget.dataset.page;
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-      document.getElementById('page-' + page).classList.add('active');
-      if (page === 'transactions') loadTransactions();
-      if (page === 'budgets') loadBudgets();
-    });
+});
+
+function bindEvents() {
+  document.querySelectorAll('.nav-item[data-page]').forEach(item => {
+    item.addEventListener('click', e => { e.preventDefault(); showPage(item.dataset.page); });
   });
 
-  // Setup modals
-  document.getElementById('txn-form').addEventListener('submit', handleSaveTxn);
-  document.getElementById('budget-form').addEventListener('submit', handleSaveBudget);
-  document.getElementById('monthly-budget-form').addEventListener('submit', handleSaveMonthlyBudget);
-  document.getElementById('create-cat-form').addEventListener('submit', handleCreateCategory);
+  // Delegated handlers for buttons declared in the HTML with data-action
+  document.addEventListener('click', e => {
+    const overlay = e.target.closest('[data-backdrop-close]');
+    if (overlay && e.target === overlay) { closeModal(overlay.id); return; }
 
-  // Filter chips
+    const el = e.target.closest('[data-action]');
+    if (!el) return;
+    const action = el.dataset.action;
+    if (el.tagName === 'A') e.preventDefault();
+    switch (action) {
+      case 'toggle-theme':          toggleThemeGlobal(); break;
+      case 'open-monthly-budget':   openMonthlyBudgetModal(); break;
+      case 'view-all-transactions': showPage('transactions'); break;
+      case 'open-budget-modal':     openBudgetModal(); break;
+      case 'logout':                handleLogout(el); break;
+      case 'open-create-category':  openCreateCategoryModal(); break;
+      case 'open-txn-modal':        openTxnModal(); break;
+      case 'close-modal':           closeModal(el.dataset.modal); break;
+      case 'set-txn-type':          setTxnType(el.dataset.type); break;
+      case 'set-cc-type':           setCcType(el.dataset.type); break;
+    }
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => closeModal(m.id));
+  });
+
+  $('txn-form').addEventListener('submit', handleSaveTxn);
+  $('budget-form').addEventListener('submit', handleSaveBudget);
+  $('monthly-budget-form').addEventListener('submit', handleSaveMonthlyBudget);
+  $('create-cat-form').addEventListener('submit', handleCreateCategory);
+  $('txn-search').addEventListener('input', debounce(loadTransactions, 300));
+  $('setting-currency').addEventListener('change', e => updatePref('currency', e.target.value));
+  $('setting-theme').addEventListener('change', e => updateTheme(e.target.checked));
+
   document.querySelectorAll('.filter-chips .chip').forEach(chip => {
-    chip.addEventListener('click', (e) => {
+    chip.addEventListener('click', () => {
       document.querySelectorAll('.filter-chips .chip').forEach(c => c.classList.remove('active'));
-      e.target.classList.add('active');
+      chip.classList.add('active');
       loadTransactions();
     });
   });
 
-  // Color Swatches
   document.querySelectorAll('.color-swatch').forEach(sw => {
-    sw.addEventListener('click', (e) => {
+    sw.addEventListener('click', () => {
       document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
-      e.target.classList.add('selected');
-      document.getElementById('cc-color-val').value = e.target.dataset.color;
-      document.getElementById('cc-bg-val').value = e.target.dataset.bg;
+      sw.classList.add('selected');
+      $('cc-color-val').value = safeColor(sw.dataset.color);
     });
   });
-});
+}
+
+function showPage(page) {
+  document.querySelectorAll('.nav-item[data-page]').forEach(n => n.classList.toggle('active', n.dataset.page === page));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  $('page-' + page).classList.add('active');
+  if (page === 'dashboard') loadDashboard();
+  if (page === 'transactions') loadTransactions();
+  if (page === 'budgets') loadBudgets();
+  if (page === 'settings') loadSettings();
+}
 
 // ── Auth ──
 async function checkAuth() {
   try {
-    const res = await fetch('/api/auth/me');
-    if (!res.ok) { window.location.href = '/login.html'; return; }
-    currentUser = await res.json();
-    
-    // Set currency symbol based on code
-    const map = { USD:'$', EUR:'€', GBP:'£', INR:'₹', JPY:'¥', CAD:'C$', AUD:'A$' };
-    currentCurrencySymbol = map[currentUser.currency] || currentUser.currency;
-
-    // Update UI
-    document.getElementById('sb-user-name').textContent = currentUser.name;
-    document.getElementById('sb-user-initial').textContent = currentUser.name.charAt(0).toUpperCase();
-    document.getElementById('st-user-name').textContent = currentUser.name;
-    document.getElementById('st-user-email').textContent = currentUser.email;
-    document.getElementById('st-user-initial').textContent = currentUser.name.charAt(0).toUpperCase();
-    document.getElementById('dash-greeting').textContent = `Hi, ${currentUser.name.split(' ')[0]}`;
-    
-    // Currency Select
-    const curSelect = document.getElementById('setting-currency');
-    const currencies = [
-      {code:'USD',sym:'$'}, {code:'EUR',sym:'€'}, {code:'GBP',sym:'£'}, {code:'INR',sym:'₹'}, 
-      {code:'JPY',sym:'¥'}, {code:'CAD',sym:'C$'}, {code:'AUD',sym:'A$'}
-    ];
-    curSelect.innerHTML = currencies.map(c => `<option value="${c.code}" ${currentUser.currency===c.code?'selected':''}>${c.code} (${c.sym})</option>`).join('');
-
-    // Theme setup
-    const isDark = currentUser.theme === 'dark';
-    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-    document.getElementById('setting-theme').checked = isDark;
-
-    loadDashboard();
+    currentUser = await Api.get('/api/auth/me');
   } catch (err) {
-    window.location.href = '/login.html';
+    if (err.status !== 401) {
+      showToast(err.message, 'error');
+      setTimeout(() => { window.location.href = '/login.html'; }, 1500);
+    }
+    return;
   }
+  renderUser();
+  loadDashboard();
 }
 
-async function handleLogout() {
-  await fetch('/api/auth/logout', { method: 'POST' });
-  window.location.href = '/login.html';
+function renderUser() {
+  const name = currentUser.name || '';
+  const initial = name.charAt(0).toUpperCase() || '?';
+  $('sb-user-name').textContent = name;
+  $('sb-user-initial').textContent = initial;
+  $('st-user-name').textContent = name;
+  $('st-user-email').textContent = currentUser.email;
+  $('st-user-initial').textContent = initial;
+  $('st-total-txns').textContent = String(currentUser.transactionCount ?? 0);
+  $('dash-greeting').textContent = `Hi, ${name.split(' ')[0]}`;
+
+  $('setting-currency').replaceChildren(...CURRENCIES.map(c =>
+    h('option', { value: c.code, selected: currentUser.currency === c.code }, `${c.code} (${c.symbol})`)));
+
+  const isDark = currentUser.theme === 'dark';
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  $('setting-theme').checked = isDark;
+}
+
+async function handleLogout(button) {
+  await withBusy(button, 'Signing out…', async () => {
+    try {
+      await Api.post('/api/auth/logout');
+      window.location.href = '/login.html';
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  });
 }
 
 async function updatePref(key, value) {
-  await fetch('/api/auth/preferences', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ [key]: value })
-  });
-  showToast('Preferences updated');
-  if (key === 'currency') window.location.reload();
-}
-
-function updateTheme(isDark) {
-  const theme = isDark ? 'dark' : 'light';
-  document.documentElement.setAttribute('data-theme', theme);
-  updatePref('theme', theme);
-  
-  // Re-render charts for color updates
-  if (document.querySelector('#page-dashboard').classList.contains('active')) {
-    loadCharts();
+  try {
+    const { user } = await Api.patch('/api/auth/preferences', { [key]: value });
+    currentUser = { ...currentUser, ...user };
+    showToast('Preferences updated');
+    if (key === 'currency') { renderUser(); refreshActivePage(); }
+    return true;
+  } catch (err) {
+    showToast(err.message, 'error');
+    renderUser(); // revert controls to the saved state
+    return false;
   }
 }
 
-function toggleThemeGlobal(e) {
-  if (e) e.preventDefault();
-  const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-  const isDark = currentTheme === 'light'; // toggling to dark
-  document.getElementById('setting-theme').checked = isDark;
-  updateTheme(isDark);
+async function updateTheme(isDark) {
+  const theme = isDark ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', theme);
+  $('setting-theme').checked = isDark;
+  if (await updatePref('theme', theme) && $('page-dashboard').classList.contains('active')) loadCharts();
 }
 
-// ── Formatters ──
-function formatMoney(amount) {
-  return currentCurrencySymbol + parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-function formatDate(dateStr) {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+function toggleThemeGlobal() {
+  updateTheme(document.documentElement.getAttribute('data-theme') !== 'dark');
 }
 
-// ── Toast ──
-function showToast(msg) {
-  const el = document.getElementById('toast');
-  el.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> ${msg}`;
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 3000);
+function refreshActivePage() {
+  const active = document.querySelector('.page.active');
+  if (!active) return;
+  showPage(active.id.replace('page-', ''));
 }
 
 // ── Modals ──
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openModal(id) { $(id).classList.add('open'); }
+function closeModal(id) { if ($(id)) $(id).classList.remove('open'); }
 
-// ── Categories API ──
-let CACHED_CATEGORIES = [];
-async function fetchCategories(type = '') {
-  const res = await fetch(`/api/categories${type ? '?type='+type : ''}`);
-  return await res.json();
-}
+// ── Categories ──
 async function refreshCategoriesCache() {
-  CACHED_CATEGORIES = await fetchCategories();
+  const cats = await Api.get('/api/categories');
+  categoriesCache = Array.isArray(cats) ? cats : [];
 }
-function getCategoryInfo(name) {
-  const c = CACHED_CATEGORIES.find(c => c.name === name);
-  return c || { name, emoji: '🏷', color: '#64748B', bg: 'rgba(100,116,139,0.1)' };
+
+function getCategoryInfo(name, type) {
+  return categoriesCache.find(c => c.name === name && (!type || c.type === type))
+    || categoriesCache.find(c => c.name === name)
+    || { name, emoji: '🏷', color: FALLBACK_COLOR };
 }
 
 // ── Dashboard ──
 async function loadDashboard() {
-  await refreshCategoriesCache();
-  
-  // Check if monthly budget is set
-  const mbRes = await fetch(`/api/budgets/monthly?month=${currentMonth}`);
-  const mbData = await mbRes.json();
-  const monthlyBudget = mbData.budget ? mbData.budget.amount : 0;
+  await safely(async () => {
+    await refreshCategoriesCache();
+    const [mb, data] = await Promise.all([
+      Api.get(`/api/budgets/monthly?month=${currentMonth}`),
+      Api.get(`/api/analytics/summary?month=${currentMonth}`),
+    ]);
+    const monthlyBudget = mb.budget ? Number(mb.budget.amount) : 0;
 
-  const res = await fetch('/api/analytics/summary');
-  const data = await res.json();
-  
-  document.getElementById('val-balance').textContent  = formatMoney(data.balance);
-  document.getElementById('val-income').textContent   = formatMoney(data.monthlyIncome);
-  document.getElementById('val-expenses').textContent = formatMoney(data.monthlyExpenses);
-  document.getElementById('val-savings').textContent  = data.savingsRate + '%';
+    $('val-balance').textContent  = money(data.balance);
+    $('val-income').textContent   = money(data.monthlyIncome);
+    $('val-expenses').textContent = money(data.monthlyExpenses);
+    $('val-savings').textContent  = data.savingsRate === null || data.savingsRate === undefined ? '—' : data.savingsRate + '%';
 
-  if (!monthlyBudget && data.monthlyExpenses === 0 && data.monthlyIncome === 0) {
-    // Brand new month/account, prompt to set overarching budget
-    openMonthlyBudgetModal();
-  } else {
-    // Show top tracker
-    document.getElementById('bov-card').style.display = 'block';
-    const spent = data.monthlyExpenses;
-    const limit = monthlyBudget || 0; // If 0, maybe they didn't set one yet but have expenses
-    document.getElementById('bov-spent').textContent = formatMoney(spent);
-    document.getElementById('bov-limit').textContent = limit > 0 ? formatMoney(limit) : 'Not set';
-    
-    let pct = limit > 0 ? (spent / limit) * 100 : 0;
-    if (pct > 100) pct = 100;
-    const fill = document.getElementById('bov-fill');
-    fill.style.width = pct + '%';
-    
-    // Status color
-    fill.className = 'bov-bar-fill'; // reset
-    if (pct >= 90) {
-      fill.classList.add('danger'); // Red
-    } else if (pct >= 75) {
-      fill.classList.add('amber'); // Amber
-    }
-    
-    document.getElementById('bov-pct').textContent = `${Math.round(pct)}% used`;
-    if (limit > 0) {
-      const rem = limit - spent;
-      document.getElementById('bov-rem').textContent = rem >= 0 ? `${formatMoney(rem)} left` : `${formatMoney(Math.abs(rem))} over`;
-      document.getElementById('bov-rem').style.color = rem >= 0 ? 'var(--text-muted)' : 'var(--red)';
-    } else {
-      document.getElementById('bov-rem').textContent = 'Set limit to track progress';
-    }
-  }
+    renderBudgetOverview(monthlyBudget, Number(data.monthlyExpenses) || 0, data);
+  }, 'Could not load your dashboard.');
 
   loadRecentTxns();
   loadCharts();
 }
 
-// ── Overarching Budget Modal ──
-function openMonthlyBudgetModal() {
-  document.getElementById('mb-sym').textContent = currentCurrencySymbol;
-  document.getElementById('mb-amount').value = '';
+function renderBudgetOverview(limit, spent, data) {
+  if (!limit && data.monthlyExpenses === 0 && data.monthlyIncome === 0) {
+    // Brand-new month or account: prompt for an overall budget
+    $('bov-card').style.display = 'none';
+    openMonthlyBudgetModal();
+    return;
+  }
+  $('bov-card').style.display = 'block';
+  $('bov-spent').textContent = money(spent);
+  $('bov-limit').textContent = limit > 0 ? money(limit) : 'Not set';
+
+  const rawPct = limit > 0 ? (spent / limit) * 100 : 0;
+  const pct = Math.min(rawPct, 100);
+  const fill = $('bov-fill');
+  fill.style.width = pct + '%';
+  fill.className = 'bov-bar-fill';
+  if (rawPct >= 90) fill.classList.add('danger');
+  else if (rawPct >= 75) fill.classList.add('amber');
+
+  $('bov-pct').textContent = `${Math.round(rawPct)}% used`;
+  const rem = $('bov-rem');
+  if (limit > 0) {
+    const left = limit - spent;
+    rem.textContent = left >= 0 ? `${money(left)} left` : `${money(Math.abs(left))} over`;
+    rem.style.color = left >= 0 ? 'var(--text-muted)' : 'var(--red)';
+  } else {
+    rem.textContent = 'Set limit to track progress';
+    rem.style.color = 'var(--text-muted)';
+  }
+}
+
+// ── Overall monthly budget ──
+async function openMonthlyBudgetModal() {
+  $('mb-sym').textContent = symbol();
+  // Prefill with the saved target before opening, so it never overwrites typing.
+  const res = await safely(() => Api.get(`/api/budgets/monthly?month=${currentMonth}`));
+  $('mb-amount').value = res && res.budget ? res.budget.amount : '';
   openModal('monthly-budget-modal-overlay');
 }
+
 async function handleSaveMonthlyBudget(e) {
   e.preventDefault();
-  const amt = document.getElementById('mb-amount').value;
-  if (!amt) return;
-  await fetch('/api/budgets/monthly', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ month: currentMonth, amount: amt })
+  const amount = $('mb-amount').value;
+  if (!amount) return;
+  await withBusy($('mb-save-btn'), 'Saving…', async () => {
+    try {
+      await Api.post('/api/budgets/monthly', { month: currentMonth, amount });
+      closeModal('monthly-budget-modal-overlay');
+      showToast('Monthly target saved');
+      refreshActivePage();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   });
-  closeModal('monthly-budget-modal-overlay');
-  showToast('Monthly target saved');
-  loadDashboard();
 }
 
-// ── Custom Category Modal ──
+// ── Custom categories ──
 function openCreateCategoryModal() {
-  // Can be called from anywhere. Default to expense
   setCcType('expense');
-  document.getElementById('cc-name').value = '';
-  document.getElementById('cc-emoji').value = '🏷';
+  $('cc-name').value = '';
+  $('cc-emoji').value = '🏷';
   openModal('create-cat-modal-overlay');
 }
+
 function setCcType(type) {
-  document.getElementById('cc-type').value = type;
-  document.getElementById('cc-type-expense').classList.toggle('active', type === 'expense');
-  document.getElementById('cc-type-income').classList.toggle('active', type === 'income');
+  $('cc-type').value = type;
+  $('cc-type-expense').classList.toggle('active', type === 'expense');
+  $('cc-type-income').classList.toggle('active', type === 'income');
 }
+
 async function handleCreateCategory(e) {
   e.preventDefault();
-  const type  = document.getElementById('cc-type').value;
-  const name  = document.getElementById('cc-name').value;
-  const emoji = document.getElementById('cc-emoji').value;
-  const color = document.getElementById('cc-color-val').value;
-  const bg    = document.getElementById('cc-bg-val').value;
-
-  const res = await fetch('/api/categories', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ type, name, emoji, color, bg })
-  });
-
-  if (res.ok) {
-    closeModal('create-cat-modal-overlay');
-    showToast('Category created!');
-    await refreshCategoriesCache();
-    // If the add txn modal is open, re-render its grid
-    if (document.getElementById('txn-modal-overlay').classList.contains('open')) {
-      renderCategoryGrid(document.getElementById('txn-type').value);
+  const payload = {
+    type:  $('cc-type').value,
+    name:  $('cc-name').value.trim(),
+    emoji: $('cc-emoji').value.trim(),
+    color: safeColor($('cc-color-val').value),
+  };
+  await withBusy($('cc-save-btn'), 'Creating…', async () => {
+    try {
+      await Api.post('/api/categories', payload);
+      closeModal('create-cat-modal-overlay');
+      showToast('Category created!');
+      await refreshCategoriesCache();
+      if ($('txn-modal-overlay').classList.contains('open')) renderCategoryGrid($('txn-type').value);
+      if ($('page-settings').classList.contains('active')) renderCategoryManager();
+    } catch (err) {
+      showToast(err.message, 'error');
     }
-  }
+  });
 }
 
 // ── Charts ──
 async function loadCharts() {
-  const [catRes, trendRes] = await Promise.all([
-    fetch('/api/analytics/categories'),
-    fetch('/api/analytics/trends')
-  ]);
-  const catData = await catRes.json();
-  const trendData = await trendRes.json();
+  await safely(async () => {
+    const [catData, trendData] = await Promise.all([
+      Api.get(`/api/analytics/categories?month=${currentMonth}`),
+      Api.get(`/api/analytics/trends?month=${currentMonth}`),
+    ]);
+    const cats   = Array.isArray(catData) ? catData : [];
+    const trends = Array.isArray(trendData) ? trendData : [];
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
 
-  // Donut
-  const ctxCat = document.getElementById('categoryChart').getContext('2d');
-  if (categoryChartInstance) categoryChartInstance.destroy();
-  
-  const total = catData.reduce((s,c)=>s+c.total, 0);
-  document.getElementById('donut-center-val').textContent = formatMoney(total);
+    // Donut
+    if (categoryChartInstance) categoryChartInstance.destroy();
+    const total = cats.reduce((s, c) => s + Number(c.total || 0), 0);
+    $('donut-center-val').textContent = money(total);
+    const bgColors = cats.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]);
 
-  const labels = catData.map(c => c.category);
-  const data   = catData.map(c => c.total);
-  // Re-use chart colors based on index
-  const bgColors = labels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]);
-
-  categoryChartInstance = new Chart(ctxCat, {
-    type: 'doughnut',
-    data: {
-      labels,
-      datasets: [{ data, backgroundColor: bgColors, borderWidth: 0, hoverOffset: 4 }]
-    },
-    options: {
-      cutout: '75%', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: {
-        callbacks: { label: (ctx) => ` ${currentCurrencySymbol}${ctx.raw}` }
-      }}
-    }
-  });
-
-  // Render Legend manually
-  const leg = document.getElementById('donut-legend');
-  if (catData.length === 0) {
-    leg.innerHTML = `<div style="text-align:center; color:var(--text-muted); font-size:13px; margin-top:20px;">No expense data yet</div>`;
-  } else {
-    leg.innerHTML = catData.map((c, i) => {
-      const pct = total > 0 ? Math.round((c.total / total) * 100) : 0;
-      return `
-        <div class="legend-item">
-          <div class="legend-dot" style="background:${bgColors[i]}"></div>
-          <span class="legend-name">${c.category}</span>
-          <span class="legend-amount">${formatMoney(c.total)}</span>
-          <span class="legend-pct">${pct}%</span>
-        </div>
-      `;
-    }).join('');
-  }
-
-  // Trend
-  const ctxTrend = document.getElementById('trendChart').getContext('2d');
-  if (trendChartInstance) trendChartInstance.destroy();
-  
-  const mLabels = trendData.map(t => t.month);
-  const incData = trendData.map(t => t.income);
-  const expData = trendData.map(t => t.expenses);
-
-    trendChartInstance = new Chart(ctxTrend, {
-    type: 'line',
-    data: {
-      labels: mLabels,
-      datasets: [
-        { label: 'Income', data: incData, borderColor: '#10B981', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderWidth: 3, tension: 0.4, fill: true, pointRadius: 0, pointHitRadius: 20 },
-        { label: 'Expenses', data: expData, borderColor: '#EF4444', backgroundColor: 'rgba(239, 68, 68, 0.0)', borderWidth: 3, tension: 0.4, fill: false, pointRadius: 0, pointHitRadius: 20 }
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { 
-          grid: { display: false }, 
-          ticks: { font: { family: 'Inter', size: 12 }, color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#94A3B8' : '#64748B' } 
+    if (typeof Chart === 'function') {
+      categoryChartInstance = new Chart($('categoryChart').getContext('2d'), {
+        type: 'doughnut',
+        data: { labels: cats.map(c => c.category), datasets: [{ data: cats.map(c => c.total), backgroundColor: bgColors, borderWidth: 0, hoverOffset: 4 }] },
+        options: {
+          cutout: '75%', responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${money(ctx.raw)}` } } },
         },
-        y: { 
-          grid: { color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#2A2A2A' : '#E2E8F0' }, 
-          border: { display: false }, 
-          ticks: { font: { family: 'Inter', size: 12 }, color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#94A3B8' : '#64748B', callback: (val) => currentCurrencySymbol+val } 
-        }
-      }
+      });
     }
-  });
+
+    const legend = $('donut-legend');
+    if (!cats.length) {
+      legend.replaceChildren(h('div', { class: 'legend-empty', text: 'No expense data yet' }));
+    } else {
+      legend.replaceChildren(...cats.map((c, i) => h('div', { class: 'legend-item' },
+        h('div', { class: 'legend-dot', style: { background: bgColors[i] } }),
+        h('span', { class: 'legend-name', text: c.category }),
+        h('span', { class: 'legend-amount', text: money(c.total) }),
+        h('span', { class: 'legend-pct', text: `${total > 0 ? Math.round((c.total / total) * 100) : 0}%` }),
+      )));
+    }
+
+    // Cash-flow trend
+    if (trendChartInstance) trendChartInstance.destroy();
+    if (typeof Chart === 'function') {
+      const tick = isDark ? '#94A3B8' : '#64748B';
+      trendChartInstance = new Chart($('trendChart').getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: trends.map(t => t.month),
+          datasets: [
+            { label: 'Income', data: trends.map(t => t.income), borderColor: '#10B981', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderWidth: 3, tension: 0.4, fill: true, pointRadius: 0, pointHitRadius: 20 },
+            { label: 'Expenses', data: trends.map(t => t.expenses), borderColor: '#EF4444', backgroundColor: 'rgba(239, 68, 68, 0.0)', borderWidth: 3, tension: 0.4, fill: false, pointRadius: 0, pointHitRadius: 20 },
+          ],
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${money(ctx.raw)}` } } },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 12 }, color: tick } },
+            y: { grid: { color: isDark ? '#2A2A2A' : '#E2E8F0' }, border: { display: false },
+                 ticks: { font: { family: 'Inter', size: 12 }, color: tick, callback: val => symbol() + val } },
+          },
+        },
+      });
+    }
+  }, 'Could not load charts.');
 }
 
-// ── Transaction Management ──
+// ── Transactions ──
+function emptyState(emoji, title, desc) {
+  return h('div', { class: 'empty-state' },
+    h('div', { class: 'empty-emoji', text: emoji }),
+    h('h3', { class: 'empty-title', text: title }),
+    desc ? h('p', { class: 'empty-desc', text: desc }) : null);
+}
+
+function errorState(onRetry) {
+  return h('div', { class: 'empty-state' },
+    h('div', { class: 'empty-emoji', text: '⚠️' }),
+    h('h3', { class: 'empty-title', text: 'Could not load data' }),
+    h('button', { class: 'btn-outline', type: 'button', onclick: onRetry }, 'Try again'));
+}
+
 async function loadRecentTxns() {
-  const res = await fetch('/api/transactions');
-  const txns = await res.json();
-  const list = document.getElementById('recent-txn-list');
-  
-  if (!txns.length) {
-    list.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-emoji">📝</div>
-        <h3 class="empty-title">No transactions yet</h3>
-        <p class="empty-desc">Record your first income or expense to see it here.</p>
-      </div>`;
-    return;
+  const list = $('recent-txn-list');
+  try {
+    const txns = await Api.get('/api/transactions?limit=5');
+    list.replaceChildren(...(txns.length
+      ? txns.map(renderTxnRow)
+      : [emptyState('📝', 'No transactions yet', 'Record your first income or expense to see it here.')]));
+  } catch (err) {
+    if (err.status !== 401) list.replaceChildren(errorState(loadRecentTxns));
   }
-
-  list.innerHTML = txns.slice(0, 5).map(txn => renderTxnRow(txn)).join('');
 }
 
+let txnRequestSeq = 0;
 async function loadTransactions() {
-  const type   = document.querySelector('.filter-chips .chip.active').dataset.filterType;
-  const search = document.getElementById('txn-search').value;
-  
-  let url = '/api/transactions?';
-  if (type !== 'all') url += `type=${type}&`;
-  if (search) url += `search=${encodeURIComponent(search)}`;
+  const list   = $('all-txn-list');
+  const active = document.querySelector('.filter-chips .chip.active');
+  const type   = active ? active.dataset.filterType : 'all';
+  const search = $('txn-search').value.trim();
 
-  const res = await fetch(url);
-  const txns = await res.json();
-  const list = document.getElementById('all-txn-list');
-  
-  // Group by date
-  const grouped = {};
-  txns.forEach(t => {
-    if (!grouped[t.date]) grouped[t.date] = [];
-    grouped[t.date].push(t);
-  });
+  const params = new URLSearchParams();
+  if (type !== 'all') params.set('type', type);
+  if (search) params.set('search', search);
+  const seq = ++txnRequestSeq;
 
-  if (!txns.length) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-emoji">🔍</div><h3 class="empty-title">No results found</h3></div>`;
-    return;
+  try {
+    const txns = await Api.get('/api/transactions?' + params.toString());
+    if (seq !== txnRequestSeq) return; // a newer search already rendered
+    if (!txns.length) {
+      list.replaceChildren(emptyState('🔍', search || type !== 'all' ? 'No results found' : 'No transactions yet'));
+      return;
+    }
+    const grouped = new Map();
+    for (const t of txns) {
+      if (!grouped.has(t.date)) grouped.set(t.date, []);
+      grouped.get(t.date).push(t);
+    }
+    const nodes = [];
+    for (const [date, items] of grouped) {
+      nodes.push(h('div', { class: 'txn-group-header', text: formatDate(date) }));
+      nodes.push(h('div', { class: 'txn-group-list' }, items.map(renderTxnRow)));
+    }
+    list.replaceChildren(...nodes);
+  } catch (err) {
+    if (seq === txnRequestSeq && err.status !== 401) list.replaceChildren(errorState(loadTransactions));
   }
-
-  let html = '';
-  for (const [date, items] of Object.entries(grouped)) {
-    html += `<div class="txn-group-header">${formatDate(date)}</div>`;
-    html += `<div class="txn-group-list">`;
-    html += items.map(txn => renderTxnRow(txn)).join('');
-    html += `</div>`;
-  }
-  list.innerHTML = html;
 }
 
 function renderTxnRow(txn) {
   const isExp = txn.type === 'expense';
-  const cInfo = getCategoryInfo(txn.category);
-  
-  return `
-    <div class="txn-row">
-      <div class="txn-icon" style="background:${cInfo.bg}; color:${cInfo.color}">${cInfo.emoji}</div>
-      <div class="txn-info">
-        <div class="txn-merchant">${txn.merchant}</div>
-        <div class="txn-meta">
-          <span class="txn-category-tag" style="background:var(--surface-2); color:var(--text-secondary)">${txn.category}</span>
-          <span class="txn-date">${formatDate(txn.date)}</span>
-        </div>
-      </div>
-      <div class="txn-right">
-        <div class="txn-amount ${txn.type}">${isExp?'-':'+'}${formatMoney(txn.amount)}</div>
-      </div>
-      <div class="txn-actions">
-        <button class="txn-action-btn delete" onclick="deleteTxn(${txn.id})" title="Delete">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-        </button>
-      </div>
-    </div>
-  `;
+  const cInfo = getCategoryInfo(txn.category, txn.type);
+  const color = safeColor(cInfo.color);
+
+  return h('div', { class: 'txn-row' },
+    h('div', { class: 'txn-icon', style: { background: tint(color), color }, text: cInfo.emoji || '🏷' }),
+    h('div', { class: 'txn-info' },
+      h('div', { class: 'txn-merchant', text: txn.merchant }),
+      h('div', { class: 'txn-meta' },
+        h('span', { class: 'txn-category-tag', style: { background: 'var(--surface-2)', color: 'var(--text-secondary)' }, text: txn.category }),
+        h('span', { class: 'txn-date', text: formatDate(txn.date) }))),
+    h('div', { class: 'txn-right' },
+      h('div', { class: `txn-amount ${isExp ? 'expense' : 'income'}`, text: `${isExp ? '-' : '+'}${money(txn.amount)}` })),
+    h('div', { class: 'txn-actions' },
+      h('button', { class: 'txn-action-btn edit', type: 'button', title: 'Edit', 'aria-label': `Edit ${txn.merchant}`, onclick: () => openTxnModal(txn) }, icon('icon-edit')),
+      h('button', { class: 'txn-action-btn delete', type: 'button', title: 'Delete', 'aria-label': `Delete ${txn.merchant}`, onclick: e => deleteTxn(txn.id, e.currentTarget) }, icon('icon-trash'))),
+  );
 }
 
-// ── Transaction Modal ──
-async function openTxnModal() {
-  await refreshCategoriesCache();
-  document.getElementById('txn-sym').textContent = currentCurrencySymbol;
-  document.getElementById('txn-form').reset();
-  document.getElementById('txn-date').valueAsDate = new Date();
-  setTxnType('expense'); // will render grid
+// ── Transaction modal (create & edit) ──
+async function openTxnModal(txn) {
+  editingTxnId = txn && txn.id ? txn.id : null;
+  const ok = await safely(refreshCategoriesCache, 'Could not load categories.');
+  if (ok === undefined && !categoriesCache.length) return;
+
+  $('txn-modal-title').textContent = editingTxnId ? 'Edit Transaction' : 'New Transaction';
+  $('txn-save-btn').textContent = editingTxnId ? 'Save Changes' : 'Save Transaction';
+  $('txn-sym').textContent = symbol();
+  $('txn-form').reset();
+  setTxnType(editingTxnId ? txn.type : 'expense');
+  if (editingTxnId) {
+    $('txn-amount').value   = txn.amount;
+    $('txn-merchant').value = txn.merchant;
+    $('txn-date').value     = txn.date;
+    $('txn-notes').value    = txn.notes || '';
+    const btn = [...document.querySelectorAll('#txn-cat-grid .cat-btn[data-cat]')].find(b => b.dataset.cat === txn.category);
+    if (btn) selectTxnCat(btn, txn.category);
+  } else {
+    $('txn-date').value = localDateString();
+  }
   openModal('txn-modal-overlay');
 }
 
 function setTxnType(type) {
-  document.getElementById('txn-type').value = type;
-  document.getElementById('type-expense').classList.toggle('active', type === 'expense');
-  document.getElementById('type-income').classList.toggle('active', type === 'income');
+  $('txn-type').value = type;
+  $('type-expense').classList.toggle('active', type === 'expense');
+  $('type-income').classList.toggle('active', type === 'income');
   renderCategoryGrid(type);
 }
 
 function renderCategoryGrid(type) {
-  const grid = document.getElementById('txn-cat-grid');
-  const cats = CACHED_CATEGORIES.filter(c => c.type === type);
-  
-  let html = cats.map(c => `
-    <div class="cat-btn" data-cat="${c.name}" onclick="selectTxnCat(this, '${c.name}')">
-      <span class="cat-emoji">${c.emoji}</span>
-      <span>${c.name}</span>
-    </div>
-  `).join('');
-  
-  // Add "New Category" button at the end
-  html += `
-    <div class="cat-btn add-cat-btn" onclick="openCreateCategoryModal()">
-      <span class="cat-emoji" style="font-size:20px;">+</span>
-      <span>New</span>
-    </div>
-  `;
-  grid.innerHTML = html;
-  document.getElementById('txn-category').value = '';
+  const cats = categoriesCache.filter(c => c.type === type);
+  const buttons = cats.map(c => {
+    const btn = h('button', { class: 'cat-btn', type: 'button', dataset: { cat: c.name } },
+      h('span', { class: 'cat-emoji', text: c.emoji }),
+      h('span', { text: c.name }));
+    btn.addEventListener('click', () => selectTxnCat(btn, c.name));
+    return btn;
+  });
+  buttons.push(h('button', { class: 'cat-btn add-cat-btn', type: 'button', onclick: openCreateCategoryModal },
+    h('span', { class: 'cat-emoji cat-emoji-add', text: '+' }),
+    h('span', { text: 'New' })));
+  $('txn-cat-grid').replaceChildren(...buttons);
+  $('txn-category').value = '';
 }
 
 function selectTxnCat(el, name) {
-  document.querySelectorAll('#txn-cat-grid .cat-btn').forEach(btn => btn.classList.remove('selected'));
+  document.querySelectorAll('#txn-cat-grid .cat-btn').forEach(b => b.classList.remove('selected'));
   el.classList.add('selected');
-  document.getElementById('txn-category').value = name;
+  $('txn-category').value = name;
 }
 
 async function handleSaveTxn(e) {
   e.preventDefault();
-  const cat = document.getElementById('txn-category').value;
-  if (!cat) { alert('Please select a category.'); return; }
+  const category = $('txn-category').value;
+  if (!category) { showToast('Please select a category.', 'error'); return; }
 
   const payload = {
-    type: document.getElementById('txn-type').value,
-    amount: document.getElementById('txn-amount').value,
-    category: cat,
-    merchant: document.getElementById('txn-merchant').value,
-    date: document.getElementById('txn-date').value,
-    notes: document.getElementById('txn-notes').value
+    type: $('txn-type').value,
+    amount: $('txn-amount').value,
+    category,
+    merchant: $('txn-merchant').value.trim(),
+    date: $('txn-date').value,
+    notes: $('txn-notes').value.trim(),
   };
 
-  await fetch('/api/transactions', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
+  await withBusy($('txn-save-btn'), 'Saving…', async () => {
+    try {
+      if (editingTxnId) await Api.put(`/api/transactions/${encodeURIComponent(editingTxnId)}`, payload);
+      else await Api.post('/api/transactions', payload);
+      closeModal('txn-modal-overlay');
+      showToast(editingTxnId ? 'Transaction updated' : 'Transaction saved');
+      editingTxnId = null;
+      refreshActivePage();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   });
-
-  closeModal('txn-modal-overlay');
-  showToast('Transaction saved');
-  
-  const activePage = document.querySelector('.page.active').id;
-  if (activePage === 'page-dashboard') loadDashboard();
-  if (activePage === 'page-transactions') loadTransactions();
 }
 
-async function deleteTxn(id) {
+async function deleteTxn(id, button) {
   if (!confirm('Delete this transaction?')) return;
-  await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
-  showToast('Transaction deleted');
-  
-  const activePage = document.querySelector('.page.active').id;
-  if (activePage === 'page-dashboard') loadDashboard();
-  if (activePage === 'page-transactions') loadTransactions();
+  await withBusy(button, null, async () => {
+    try {
+      await Api.del(`/api/transactions/${encodeURIComponent(id)}`);
+      showToast('Transaction deleted');
+      refreshActivePage();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  });
 }
 
-// ── Budget Management ──
+// ── Budgets ──
 async function loadBudgets() {
-  await refreshCategoriesCache();
-  
-  const mbRes = await fetch(`/api/budgets/monthly?month=${currentMonth}`);
-  const mbData = await mbRes.json();
-  const monthlyBudget = mbData.budget ? mbData.budget.amount : 0;
+  const list = $('budget-list');
+  try {
+    await refreshCategoriesCache();
+    const [mb, budgets] = await Promise.all([
+      Api.get(`/api/budgets/monthly?month=${currentMonth}`),
+      Api.get(`/api/budgets?month=${currentMonth}`),
+    ]);
+    const monthlyBudget = mb.budget ? Number(mb.budget.amount) : 0;
+    const totalLimit = budgets.reduce((s, b) => s + Number(b.limit_amount), 0);
+    const totalSpent = budgets.reduce((s, b) => s + Number(b.spent), 0);
+    const remain = totalLimit - totalSpent;
 
-  const res = await fetch('/api/budgets');
-  const budgets = await res.json();
-  const list = document.getElementById('budget-list');
+    $('budget-summary').replaceChildren(
+      h('div', { class: 'budget-summary-card' },
+        h('span', { class: 'bsc-label', text: 'Global Target (This Month)' }),
+        h('span', { class: 'bsc-value', style: { color: 'var(--primary)' }, text: monthlyBudget > 0 ? money(monthlyBudget) : 'Not Set' }),
+        h('button', { class: 'link-btn', type: 'button', onclick: openMonthlyBudgetModal }, 'Click to edit target')),
+      h('div', { class: 'budget-summary-card' },
+        h('span', { class: 'bsc-label', text: 'Sum of Category Limits' }),
+        h('span', { class: 'bsc-value', text: money(totalLimit) })),
+      h('div', { class: 'budget-summary-card' },
+        h('span', { class: 'bsc-label', text: remain < 0 ? 'Over Category Limits' : 'Remaining in Categories' }),
+        h('span', { class: 'bsc-value', style: { color: remain < 0 ? 'var(--red)' : 'var(--text-primary)' }, text: money(Math.abs(remain)) })),
+    );
 
-  // Compute Summary
-  const totalLimit = budgets.reduce((s,b)=>s+b.limit_amount, 0);
-  const totalSpent = budgets.reduce((s,b)=>s+b.spent, 0);
-  const remain = totalLimit - totalSpent;
-  const safeRem = remain < 0 ? 0 : remain;
-
-  document.getElementById('budget-summary').innerHTML = `
-    <div class="budget-summary-card">
-      <span class="bsc-label">Global Target (This Month)</span>
-      <span class="bsc-value" style="color:var(--primary)">${monthlyBudget > 0 ? formatMoney(monthlyBudget) : 'Not Set'}</span>
-      <span style="font-size:12px; color:var(--text-muted); cursor:pointer" onclick="openMonthlyBudgetModal()">Click to edit target</span>
-    </div>
-    <div class="budget-summary-card">
-      <span class="bsc-label">Sum of Category Limits</span>
-      <span class="bsc-value">${formatMoney(totalLimit)}</span>
-    </div>
-    <div class="budget-summary-card">
-      <span class="bsc-label">Remaining in Categories</span>
-      <span class="bsc-value" style="color:${remain < 0 ? 'var(--red)' : 'var(--text-primary)'}">${formatMoney(safeRem)}</span>
-    </div>
-  `;
-
-  if (!budgets.length) {
-    list.innerHTML = `
-      <div class="empty-state" style="grid-column:1/-1">
-        <div class="empty-emoji">🎯</div>
-        <h3 class="empty-title">No budgets set</h3>
-        <p class="empty-desc">Create category limits to keep your spending in check.</p>
-      </div>`;
-    return;
+    if (!budgets.length) {
+      list.replaceChildren(h('div', { class: 'empty-state budget-empty' },
+        h('div', { class: 'empty-emoji', text: '🎯' }),
+        h('h3', { class: 'empty-title', text: 'No budgets set' }),
+        h('p', { class: 'empty-desc', text: 'Create category limits to keep your spending in check.' })));
+      return;
+    }
+    list.replaceChildren(...budgets.map(renderBudgetCard));
+  } catch (err) {
+    if (err.status !== 401) list.replaceChildren(errorState(loadBudgets));
   }
+}
 
-  list.innerHTML = budgets.map(b => {
-    let pct = (b.spent / b.limit_amount) * 100;
-    if (pct > 100) pct = 100;
-    
-    let color = b.color;
-    if (pct >= 90) color = 'var(--red)';
-    else if (pct >= 75) color = 'var(--amber)';
+function renderBudgetCard(b) {
+  const limit = Number(b.limit_amount);
+  const spent = Number(b.spent);
+  const rawPct = limit > 0 ? (spent / limit) * 100 : 0;
+  const pct = Math.min(rawPct, 100);
+  const base = safeColor(b.color);
+  const color = rawPct >= 90 ? 'var(--red)' : rawPct >= 75 ? 'var(--amber)' : base;
+  const rem = limit - spent;
 
-    const rem = b.limit_amount - b.spent;
-
-    return `
-      <div class="budget-card">
-        <div class="budget-card-header">
-          <div class="budget-cat-icon" style="background:${b.color}20; color:${b.color}">${b.emoji}</div>
-          <div class="budget-cat-info">
-            <div class="budget-cat-name">${b.category}</div>
-            <div class="budget-cat-period">Monthly limit</div>
-          </div>
-          <div class="budget-amounts">
-            <div class="budget-spent">${formatMoney(b.spent)}</div>
-            <div class="budget-limit">of ${formatMoney(b.limit_amount)}</div>
-          </div>
-        </div>
-        <div class="progress-bar-container">
-          <div class="progress-bar-fill" style="width:${pct}%; background:${color}"></div>
-        </div>
-        <div class="budget-footer">
-          <span class="budget-pct" style="color:${color}">${Math.round(pct)}%</span>
-          <span class="budget-remaining">${rem >= 0 ? formatMoney(rem)+' left' : formatMoney(Math.abs(rem))+' over'}</span>
-          <button class="small-btn btn-outline" style="padding:4px 8px; font-size:12px; margin-left:auto" onclick="deleteBudget(${b.id})">Remove</button>
-        </div>
-      </div>
-    `;
-  }).join('');
+  return h('div', { class: 'budget-card' },
+    h('div', { class: 'budget-card-header' },
+      h('div', { class: 'budget-cat-icon', style: { background: tint(base), color: base }, text: b.emoji }),
+      h('div', { class: 'budget-cat-info' },
+        h('div', { class: 'budget-cat-name', text: b.category }),
+        h('div', { class: 'budget-cat-period', text: 'Monthly limit' })),
+      h('div', { class: 'budget-amounts' },
+        h('div', { class: 'budget-spent', text: money(spent) }),
+        h('div', { class: 'budget-limit', text: `of ${money(limit)}` }))),
+    h('div', { class: 'progress-bar-container' },
+      h('div', { class: 'progress-bar-fill', style: { width: pct + '%', background: color } })),
+    h('div', { class: 'budget-footer' },
+      h('span', { class: 'budget-pct', style: { color }, text: `${Math.round(rawPct)}%` }),
+      h('span', { class: 'budget-remaining', text: rem >= 0 ? `${money(rem)} left` : `${money(Math.abs(rem))} over` }),
+      h('button', { class: 'small-btn btn-outline budget-remove-btn', type: 'button', onclick: e => deleteBudget(b.id, e.currentTarget) }, 'Remove')),
+  );
 }
 
 async function openBudgetModal() {
-  await refreshCategoriesCache();
-  document.getElementById('budget-sym').textContent = currentCurrencySymbol;
-  document.getElementById('budget-form').reset();
-  
-  const sel = document.getElementById('budget-category');
-  const expCats = CACHED_CATEGORIES.filter(c => c.type === 'expense');
-  sel.innerHTML = expCats.map(c => `<option value="${c.name}">${c.emoji} ${c.name}</option>`).join('');
-
+  const ok = await safely(refreshCategoriesCache, 'Could not load categories.');
+  if (ok === undefined && !categoriesCache.length) return;
+  $('budget-sym').textContent = symbol();
+  $('budget-form').reset();
+  const expCats = categoriesCache.filter(c => c.type === 'expense');
+  $('budget-category').replaceChildren(...expCats.map(c => h('option', { value: c.name }, `${c.emoji} ${c.name}`)));
   openModal('budget-modal-overlay');
 }
 
 async function handleSaveBudget(e) {
   e.preventDefault();
-  const catName = document.getElementById('budget-category').value;
-  const cInfo = getCategoryInfo(catName);
-
-  const payload = {
-    category: catName,
-    limit_amount: document.getElementById('budget-limit').value,
-    emoji: cInfo.emoji,
-    color: cInfo.color
-  };
-
-  await fetch('/api/budgets', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
+  const payload = { category: $('budget-category').value, limit_amount: $('budget-limit').value };
+  if (!payload.category) { showToast('Create an expense category first.', 'error'); return; }
+  await withBusy($('budget-save-btn'), 'Saving…', async () => {
+    try {
+      await Api.post('/api/budgets', payload);
+      closeModal('budget-modal-overlay');
+      showToast('Budget saved');
+      loadBudgets();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   });
-
-  closeModal('budget-modal-overlay');
-  showToast('Budget saved');
-  loadBudgets();
 }
 
-async function deleteBudget(id) {
+async function deleteBudget(id, button) {
   if (!confirm('Remove this category budget?')) return;
-  await fetch(`/api/budgets/${id}`, { method: 'DELETE' });
-  showToast('Budget removed');
-  loadBudgets();
+  await withBusy(button, null, async () => {
+    try {
+      await Api.del(`/api/budgets/${encodeURIComponent(id)}`);
+      showToast('Budget removed');
+      loadBudgets();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  });
 }
 
-// ── Utils ──
-function debounce(func, wait) {
-  let timeout;
-  return function executedFunction(...args) {
-    const later = () => { clearTimeout(timeout); func(...args); };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-  };
+// ── Settings ──
+async function loadSettings() {
+  await safely(async () => {
+    currentUser = await Api.get('/api/auth/me');
+    renderUser();
+    await refreshCategoriesCache();
+    renderCategoryManager();
+  }, 'Could not load settings.');
+}
+
+function renderCategoryManager() {
+  const list = $('category-manage-list');
+  if (!list) return;
+  if (!categoriesCache.length) { list.replaceChildren(h('p', { class: 'settings-row-desc', text: 'No categories yet.' })); return; }
+  list.replaceChildren(...categoriesCache.map(c => {
+    const color = safeColor(c.color);
+    return h('div', { class: 'category-manage-item' },
+      h('span', { class: 'category-manage-emoji', style: { background: tint(color), color }, text: c.emoji }),
+      h('span', { class: 'category-manage-name', text: c.name }),
+      h('span', { class: 'category-manage-type', text: c.type === 'income' ? 'Income' : 'Expense' }),
+      h('button', { class: 'txn-action-btn delete', type: 'button', title: 'Delete category', 'aria-label': `Delete category ${c.name}`,
+                    onclick: e => deleteCategory(c, e.currentTarget) }, icon('icon-trash')));
+  }));
+}
+
+async function deleteCategory(cat, button) {
+  if (!confirm(`Delete the "${cat.name}" category? Existing transactions keep their label.`)) return;
+  await withBusy(button, null, async () => {
+    try {
+      await Api.del(`/api/categories/${encodeURIComponent(cat.id)}`);
+      showToast('Category deleted');
+      await refreshCategoriesCache();
+      renderCategoryManager();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  });
 }
