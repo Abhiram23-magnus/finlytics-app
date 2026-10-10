@@ -161,9 +161,11 @@ currency and theme preferences, session expiry, and the mobile layout.
    `NODE_ENV=production`, `DATABASE_URL`, `SESSION_SECRET` (new random value), and
    `APP_BASE_URL=https://your-domain`. Add the `SMTP_*` and `MAIL_FROM` variables to
    enable password recovery.
-3. From your machine, apply migrations to that database **before** deploying code that needs them:
+3. Migrations run automatically on Vercel: the first request to a new instance applies any
+   pending ones (under an advisory lock, so concurrent cold starts are safe). To run them
+   yourself instead, set `AUTO_MIGRATE=false` and run
    `DATABASE_URL="<production url>" NODE_ENV=production SESSION_SECRET=x… npm run migrate`
-   (`SESSION_SECRET` only has to pass validation for this command).
+   before deploying (`SESSION_SECRET` only has to pass validation for this command).
 4. Deploy (`vercel --prod` or push to the connected branch).
 5. Check `https://your-domain/api/health` returns `{"status":"ok"}`.
 

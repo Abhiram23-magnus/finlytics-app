@@ -98,6 +98,9 @@ describe('configuration validation', () => {
     assert.equal(c.demoMode, false);
     assert.equal(c.rateLimits.enabled, true, 'rate limits cannot be disabled in production');
     assert.equal(c.email.enabled, false);
+    assert.equal(c.autoMigrate, true, 'Vercel applies migrations on startup');
+    assert.equal(loadConfig({ ...base, VERCEL: '1', AUTO_MIGRATE: 'false' }).autoMigrate, false);
+    assert.equal(loadConfig(base).autoMigrate, false, 'off outside Vercel');
   });
 
   test('CORS origins must be exact origins', () => {

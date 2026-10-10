@@ -40,4 +40,24 @@ if (require.main === module) {
   });
 }
 
-module.exports = app;
+// Serverless: optionally apply pending migrations once per instance before the first
+// request. migrate() holds a PostgreSQL advisory lock, so concurrent cold starts are safe.
+let handler = app;
+if (require.main !== module && config.autoMigrate) {
+  const { migrate } = require('./db/migrate');
+  let ready = null;
+  handler = (req, res) => {
+    ready = ready || migrate(app.locals.pool, { log: msg => console.log(msg) }).catch(err => {
+      ready = null; // retry on the next request
+      throw err;
+    });
+    ready.then(() => app(req, res), err => {
+      console.error('  ❌  Migration failed:', err.code || err.message);
+      res.statusCode = 503;
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.end('Service unavailable: database setup failed.');
+    });
+  };
+}
+
+module.exports = handler;
