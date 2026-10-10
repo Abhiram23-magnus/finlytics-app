@@ -3,44 +3,42 @@
 // ============================================================
 'use strict';
 
-const express        = require('express');
-const router         = express.Router();
-const requireAuth    = require('../middleware/requireAuth');
-const { Categories } = require('../db/database');
+const express     = require('express');
+const requireAuth = require('../middleware/requireAuth');
+const v           = require('../lib/validation');
 
-router.use(requireAuth);
+module.exports = function categoryRoutes({ repo }) {
+  const router = express.Router();
+  router.use(requireAuth);
 
-// GET /api/categories
-router.get('/', (req, res) => {
-  const { type } = req.query; // 'income' or 'expense'
-  const cats = Categories.list(req.session.userId, type);
-  res.json(cats);
-});
-
-// POST /api/categories
-router.post('/', (req, res) => {
-  const { type, name, emoji, color, bg } = req.body;
-  if (!type || !name) {
-    return res.status(400).json({ error: 'type and name are required' });
-  }
-
-  const newCat = Categories.create({
-    user_id: req.session.userId,
-    type,
-    name,
-    emoji: emoji || '🏷',
-    color: color || '#10B981',
-    bg: bg || 'rgba(16, 185, 129, 0.12)'
+  // GET /api/categories?type=income|expense
+  router.get('/', async (req, res) => {
+    const type = v.queryString(req, 'type');
+    const filter = type ? v.oneOf(type, 'type', v.TXN_TYPES) : undefined;
+    res.json(await repo.Categories.list(req.session.userId, filter));
   });
 
-  res.status(201).json(newCat);
-});
+  // POST /api/categories
+  router.post('/', async (req, res) => {
+    const b = v.body(req);
+    const cat = {
+      type:  v.oneOf(b.type, 'type', v.TXN_TYPES),
+      name:  v.text(b.name, 'name', { max: 40 }),
+      emoji: v.emoji(b.emoji, 'emoji', '🏷'),
+      color: v.color(b.color, 'color', '#10B981'),
+    };
+    const created = await repo.Categories.create(req.session.userId, cat);
+    if (!created) return res.status(409).json({ error: `A ${cat.type} category named "${cat.name}" already exists.` });
+    return res.status(201).json(created);
+  });
 
-// DELETE /api/categories/:id
-router.delete('/:id', (req, res) => {
-  const id = parseInt(req.params.id);
-  Categories.delete(id, req.session.userId);
-  res.json({ message: 'Deleted', id });
-});
+  // DELETE /api/categories/:id — existing transactions keep their category label.
+  router.delete('/:id', async (req, res) => {
+    const id = v.id(req.params.id);
+    const deleted = await repo.Categories.delete(req.session.userId, id);
+    if (!deleted) return res.status(404).json({ error: 'Category not found.' });
+    return res.json({ message: 'Deleted', id });
+  });
 
-module.exports = router;
+  return router;
+};

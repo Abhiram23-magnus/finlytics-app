@@ -3,67 +3,65 @@
 // ============================================================
 'use strict';
 
-const express        = require('express');
-const router         = express.Router();
-const requireAuth    = require('../middleware/requireAuth');
-const { Budgets, MonthlyBudgets } = require('../db/database');
+const express     = require('express');
+const requireAuth = require('../middleware/requireAuth');
+const v           = require('../lib/validation');
+const { currentMonthUTC } = require('../db/repository');
 
-router.use(requireAuth);
+module.exports = function budgetRoutes({ repo }) {
+  const router = express.Router();
+  router.use(requireAuth);
 
-// ── Monthly Overarching Budget ──
+  // ── Monthly overall budget ──
 
-// GET /api/budgets/monthly?month=YYYY-MM
-router.get('/monthly', (req, res) => {
-  const { month } = req.query;
-  if (!month) return res.status(400).json({ error: 'month (YYYY-MM) is required' });
-
-  const budget = MonthlyBudgets.get(req.session.userId, month);
-  res.json({ budget });
-});
-
-// POST /api/budgets/monthly
-router.post('/monthly', (req, res) => {
-  const { month, amount } = req.body;
-  if (!month || !amount) return res.status(400).json({ error: 'month and amount required' });
-
-  const budget = MonthlyBudgets.upsert(req.session.userId, month, parseFloat(amount));
-  res.status(201).json({ budget, message: 'Monthly budget saved' });
-});
-
-
-// ── Category Budgets ──
-
-// GET /api/budgets — returns category budgets enriched with spent amounts
-router.get('/', (req, res) => {
-  const budgets = Budgets.list(req.session.userId);
-  res.json(budgets);
-});
-
-// POST /api/budgets — create or upsert by category
-router.post('/', (req, res) => {
-  const { category, limit_amount, emoji = '💳', color = '#6366F1' } = req.body;
-
-  if (!category || !limit_amount)
-    return res.status(400).json({ error: 'category and limit_amount are required.' });
-
-  const budget = Budgets.upsert({
-    user_id: req.session.userId,
-    category,
-    limit_amount: parseFloat(limit_amount),
-    emoji,
-    color,
+  // GET /api/budgets/monthly?month=YYYY-MM
+  router.get('/monthly', async (req, res) => {
+    const month = v.month(v.queryString(req, 'month'));
+    res.json({ budget: await repo.MonthlyBudgets.get(req.session.userId, month) });
   });
-  res.status(201).json(budget);
-});
 
-// DELETE /api/budgets/:id
-router.delete('/:id', (req, res) => {
-  const id     = parseInt(req.params.id);
-  const budget = Budgets.findById(id, req.session.userId);
-  if (!budget) return res.status(404).json({ error: 'Budget not found.' });
+  // POST /api/budgets/monthly  { month, amount }
+  router.post('/monthly', async (req, res) => {
+    const b = v.body(req);
+    const month  = v.month(b.month);
+    const amount = v.amount(b.amount);
+    const budget = await repo.MonthlyBudgets.upsert(req.session.userId, month, amount);
+    res.status(201).json({ budget, message: 'Monthly budget saved' });
+  });
 
-  Budgets.delete(id, req.session.userId);
-  res.json({ message: 'Deleted', id });
-});
+  // ── Category budgets ──
 
-module.exports = router;
+  // GET /api/budgets?month=YYYY-MM — category budgets with the amount spent that month
+  router.get('/', async (req, res) => {
+    const m = v.queryString(req, 'month');
+    const month = m ? v.month(m) : currentMonthUTC();
+    res.json(await repo.Budgets.list(req.session.userId, month));
+  });
+
+  // POST /api/budgets — create, or update the limit of an existing category budget
+  router.post('/', async (req, res) => {
+    const b = v.body(req);
+    const categoryName = v.text(b.category, 'category', { max: 40 });
+    const category = await repo.Categories.findByName(req.session.userId, categoryName);
+    if (!category || category.type !== 'expense') {
+      return res.status(400).json({ error: `Unknown expense category "${categoryName}".`, field: 'category' });
+    }
+    const budget = await repo.Budgets.upsert(req.session.userId, {
+      category: category.name,
+      limit_amount: v.amount(b.limit_amount, 'limit_amount'),
+      emoji: category.emoji,
+      color: category.color,
+    });
+    res.status(201).json(budget);
+  });
+
+  // DELETE /api/budgets/:id
+  router.delete('/:id', async (req, res) => {
+    const id = v.id(req.params.id);
+    const deleted = await repo.Budgets.delete(req.session.userId, id);
+    if (!deleted) return res.status(404).json({ error: 'Budget not found.' });
+    return res.json({ message: 'Deleted', id });
+  });
+
+  return router;
+};

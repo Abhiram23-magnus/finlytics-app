@@ -1,5 +1,20 @@
 node_modules/
-.env
 .vercel/
 *.log
 .DS_Store
+coverage/
+
+# Secrets — only the placeholder template is committed
+.env
+.env.*
+!.env.example
+
+# Local database files and backups may contain personal financial data
+db/*.json
+!db/demo-data.example.json
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.sql.gz
+backups/

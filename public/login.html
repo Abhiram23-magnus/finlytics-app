@@ -4,6 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Finlytics — Sign In</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml"/>
   <meta name="description" content="Sign in to Finlytics — your smart expense tracker."/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -62,6 +63,35 @@
       position: relative;
       background: var(--surface);
       border-right: 1px solid var(--border);
+      overflow: hidden; isolation: isolate;
+    }
+
+    /* ── Hero background video (decorative; see background-video.js) ── */
+    :root {
+      --hero-overlay: linear-gradient(90deg,
+        rgba(255,255,255,.94) 0%, rgba(255,255,255,.86) 40%,
+        rgba(255,255,255,.45) 72%, rgba(255,255,255,.12) 100%);
+    }
+    [data-theme="dark"] {
+      --hero-overlay: linear-gradient(90deg,
+        rgba(2,18,12,.93) 0%, rgba(2,18,12,.82) 40%,
+        rgba(2,18,12,.40) 72%, rgba(2,18,12,.12) 100%);
+    }
+    .hero-media {
+      position: absolute; inset: 0; z-index: -1;
+      pointer-events: none; user-select: none;
+      background: var(--surface);
+    }
+    .hero-video {
+      display: block; width: 100%; height: 100%;
+      object-fit: cover; object-position: 62% 50%;
+    }
+    .hero-media::after {
+      content: ''; position: absolute; inset: 0;
+      background: var(--hero-overlay);
+    }
+    @media (max-width: 1200px) {
+      .hero-video { object-position: 55% 50%; }
     }
     .hero-brand { display: flex; align-items: center; gap: 14px; margin-bottom: 60px; }
     .hero-brand-icon {
@@ -158,17 +188,25 @@
       .auth-panel { padding: 40px 24px; }
     }
     @media (max-width: 480px) { .auth-panel { padding: 32px 20px; } }
+    button.demo-pill { width: 100%; font-family: inherit; }
+    .auth-submit:disabled { opacity: .7; cursor: wait; }
   </style>
 </head>
 <body>
 
 <div class="bg-symbols" id="bg-symbols"></div>
-<button id="login-theme-btn" onclick="toggleLoginTheme()" style="position: absolute; top: 20px; right: 20px; z-index: 100; background: var(--surface); color: var(--text-primary); border: 1px solid var(--border); padding: 8px 16px; border-radius: var(--radius-full); cursor: pointer; font-weight: bold; box-shadow: var(--shadow-sm); transition: all var(--transition);">
+<button id="login-theme-btn" type="button" style="position: absolute; top: 20px; right: 20px; z-index: 100; background: var(--surface); color: var(--text-primary); border: 1px solid var(--border); padding: 8px 16px; border-radius: var(--radius-full); cursor: pointer; font-weight: bold; box-shadow: var(--shadow-sm); transition: all var(--transition);">
   Toggle Dark Mode
 </button>
 <div class="auth-layout">
   <!-- Hero -->
   <div class="auth-hero">
+    <div class="hero-media" aria-hidden="true">
+      <video class="hero-video" data-bg-video
+             data-src-webm="media/finance-hero.webm" data-src="media/finance-hero.mp4"
+             data-poster="media/finance-hero-poster.jpg"
+             muted autoplay loop playsinline preload="metadata" tabindex="-1"></video>
+    </div>
     <div class="hero-brand">
       <div class="hero-brand-icon">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -181,7 +219,7 @@
     <h1 class="hero-headline">Money, <span class="highlight">tracked.</span><br/>Goals, <span class="highlight">achieved.</span></h1>
     <p class="hero-desc">Set your monthly budget, track every spend across every category, and understand your money like never before.</p>
     <div class="hero-stats">
-      <div><span class="hero-stat-val">50+</span><span class="hero-stat-lbl">World currencies</span></div>
+      <div><span class="hero-stat-val" id="currency-count">150+</span><span class="hero-stat-lbl">World currencies</span></div>
       <div><span class="hero-stat-val">∞</span><span class="hero-stat-lbl">Custom categories</span></div>
     </div>
   </div>
@@ -191,21 +229,21 @@
     <div class="auth-form-header">
       <h2 class="auth-form-title" id="form-title">Welcome back</h2>
       <p class="auth-form-subtitle" id="form-subtitle">
-        No account? <a onclick="switchTab('register')">Create one free →</a>
+        No account? <a href="#" data-tab="register">Create one free →</a>
       </p>
     </div>
 
     <div class="auth-tabs" id="auth-tabs">
-      <button class="auth-tab active" id="tab-login"    onclick="switchTab('login')">Sign In</button>
-      <button class="auth-tab"        id="tab-register" onclick="switchTab('register')">Register</button>
-      <button class="auth-tab"        id="tab-forgot"   onclick="switchTab('forgot')">Forgot?</button>
+      <button class="auth-tab active" id="tab-login"    type="button" data-tab="login">Sign In</button>
+      <button class="auth-tab"        id="tab-register" type="button" data-tab="register">Register</button>
+      <button class="auth-tab"        id="tab-forgot"   type="button" data-tab="forgot">Forgot?</button>
     </div>
 
-    <div class="auth-error"   id="auth-error"></div>
-    <div class="auth-success" id="auth-success"></div>
+    <div class="auth-error"   id="auth-error" role="alert"></div>
+    <div class="auth-success" id="auth-success" role="status"></div>
 
     <!-- LOGIN -->
-    <form class="auth-form" id="login-form" onsubmit="handleLogin(event)">
+    <form class="auth-form" id="login-form">
       <div class="auth-form-group">
         <label class="auth-label" for="login-email">Email</label>
         <input type="email" class="auth-input" id="login-email" placeholder="you@email.com" autocomplete="email" required/>
@@ -215,26 +253,28 @@
         <input type="password" class="auth-input" id="login-password" placeholder="••••••••" autocomplete="current-password" required/>
       </div>
       <button type="submit" class="auth-submit" id="login-btn">Sign In →</button>
-      <div class="auth-divider">or</div>
-      <div class="demo-pill" onclick="fillDemo()">
+      <div id="demo-section" hidden>
+        <div class="auth-divider">or</div>
+        <button type="button" class="demo-pill" id="demo-btn">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
         Try the demo account
+      </button>
       </div>
     </form>
 
     <!-- REGISTER -->
-    <form class="auth-form" id="register-form" style="display:none" onsubmit="handleRegister(event)">
+    <form class="auth-form" id="register-form" style="display:none">
       <div class="auth-form-group">
         <label class="auth-label" for="reg-name">Full Name</label>
-        <input type="text" class="auth-input" id="reg-name" placeholder="Alex Johnson" autocomplete="name" required/>
+        <input type="text" class="auth-input" id="reg-name" placeholder="Alex Johnson" autocomplete="name" required maxlength="100"/>
       </div>
       <div class="auth-form-group">
         <label class="auth-label" for="reg-email">Email</label>
-        <input type="email" class="auth-input" id="reg-email" placeholder="you@email.com" autocomplete="email" required/>
+        <input type="email" class="auth-input" id="reg-email" placeholder="you@email.com" autocomplete="email" required maxlength="254"/>
       </div>
       <div class="auth-form-group">
         <label class="auth-label" for="reg-password">Password</label>
-        <input type="password" class="auth-input" id="reg-password" placeholder="Min. 6 characters" autocomplete="new-password" required minlength="6"/>
+        <input type="password" class="auth-input" id="reg-password" placeholder="Min. 8 characters" autocomplete="new-password" required minlength="8" maxlength="72"/>
       </div>
       <div class="auth-form-group">
         <label class="auth-label" for="reg-currency">Your Currency</label>
@@ -243,179 +283,37 @@
       <button type="submit" class="auth-submit" id="reg-btn">Create Account →</button>
     </form>
 
-    <!-- FORGOT PASSWORD -->
-    <form class="auth-form" id="forgot-form" style="display:none" onsubmit="handleForgot(event)">
-      <div class="forgot-info">
+    <!-- FORGOT PASSWORD: request a reset link by email -->
+    <form class="auth-form" id="forgot-form" style="display:none">
+      <div class="forgot-info" id="forgot-info">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Enter your email and choose a new password. No email sent — instant reset.
+        <span id="forgot-info-text">Enter your account email and we'll send you a link to reset your password. The link expires after 30 minutes.</span>
       </div>
       <div class="auth-form-group">
         <label class="auth-label" for="forgot-email">Email Address</label>
-        <input type="email" class="auth-input" id="forgot-email" placeholder="you@email.com" required/>
+        <input type="email" class="auth-input" id="forgot-email" placeholder="you@email.com" autocomplete="email" required maxlength="254"/>
       </div>
-      <div class="auth-form-group" id="forgot-name-confirm" style="display:none">
-        <label class="auth-label">Account Found</label>
-        <div style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:12px;padding:14px 16px;font-size:15px;font-weight:600;color:#16A34A;" id="forgot-name-display"></div>
+      <button type="submit" class="auth-submit" id="forgot-btn">Send Reset Link →</button>
+    </form>
+
+    <!-- RESET PASSWORD: opened from the emailed link (?reset=TOKEN) -->
+    <form class="auth-form" id="reset-form" style="display:none">
+      <div class="auth-form-group">
+        <label class="auth-label" for="reset-new-pw">New Password</label>
+        <input type="password" class="auth-input" id="reset-new-pw" placeholder="Min. 8 characters" autocomplete="new-password" required minlength="8" maxlength="72"/>
       </div>
-      <div class="auth-form-group" id="forgot-pw-group" style="display:none">
-        <label class="auth-label" for="forgot-new-pw">New Password</label>
-        <input type="password" class="auth-input" id="forgot-new-pw" placeholder="Min. 6 characters" minlength="6"/>
+      <div class="auth-form-group">
+        <label class="auth-label" for="reset-confirm-pw">Confirm New Password</label>
+        <input type="password" class="auth-input" id="reset-confirm-pw" placeholder="Repeat the password" autocomplete="new-password" required minlength="8" maxlength="72"/>
       </div>
-      <button type="submit" class="auth-submit" id="forgot-btn">Find Account →</button>
+      <button type="submit" class="auth-submit" id="reset-btn">Set New Password →</button>
     </form>
   </div>
 </div>
 
-<script>
-  // Currencies
-  const CURRENCIES = [
-    {code:'USD',symbol:'$',name:'US Dollar',flag:'🇺🇸'},
-    {code:'EUR',symbol:'€',name:'Euro',flag:'🇪🇺'},
-    {code:'GBP',symbol:'£',name:'British Pound',flag:'🇬🇧'},
-    {code:'INR',symbol:'₹',name:'Indian Rupee',flag:'🇮🇳'},
-    {code:'JPY',symbol:'¥',name:'Japanese Yen',flag:'🇯🇵'},
-    {code:'CAD',symbol:'C$',name:'Canadian Dollar',flag:'🇨🇦'},
-    {code:'AUD',symbol:'A$',name:'Australian Dollar',flag:'🇦🇺'}
-  ]; // Condensed for brevity in the template
-  const sel = document.getElementById('reg-currency');
-  CURRENCIES.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c.code;
-    opt.textContent = `${c.flag} ${c.name} (${c.symbol})`;
-    sel.appendChild(opt);
-  });
-
-  let activeTab = 'login';
-  let forgotStep = 1;
-
-  function switchTab(tab) {
-    activeTab = tab;
-    forgotStep = 1;
-    ['login','register','forgot'].forEach(t => {
-      document.getElementById('tab-' + t)?.classList.toggle('active', t === tab);
-      document.getElementById(t + '-form').style.display = t === tab ? 'flex' : 'none';
-    });
-    clearMessages();
-
-    const titles = { login: 'Welcome back', register: 'Create account', forgot: 'Reset password' };
-    const subs = {
-      login: `No account? <a onclick="switchTab('register')">Create one free →</a>`,
-      register: `Have an account? <a onclick="switchTab('login')">Sign in →</a>`,
-      forgot: `Remembered it? <a onclick="switchTab('login')">Sign in →</a>`
-    };
-    document.getElementById('form-title').textContent = titles[tab];
-    document.getElementById('form-subtitle').innerHTML = subs[tab];
-
-    if (tab === 'forgot') {
-      document.getElementById('forgot-name-confirm').style.display = 'none';
-      document.getElementById('forgot-pw-group').style.display = 'none';
-      document.getElementById('forgot-btn').textContent = 'Find Account →';
-    }
-  }
-
-  function showError(msg) {
-    const el = document.getElementById('auth-error');
-    el.textContent = msg; el.classList.add('visible');
-    document.getElementById('auth-success').classList.remove('visible');
-  }
-  function showSuccess(msg) {
-    const el = document.getElementById('auth-success');
-    el.textContent = msg; el.classList.add('visible');
-    document.getElementById('auth-error').classList.remove('visible');
-  }
-  function clearMessages() {
-    document.getElementById('auth-error').classList.remove('visible');
-    document.getElementById('auth-success').classList.remove('visible');
-  }
-
-  function setLoading(btnId, loading, text) {
-    const btn = document.getElementById(btnId);
-    btn.disabled = loading;
-    btn.textContent = loading ? 'Please wait…' : text;
-  }
-
-  async function handleLogin(e) {
-    e.preventDefault(); clearMessages();
-    setLoading('login-btn', true, 'Sign In →');
-    try {
-      const res  = await fetch('/api/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: document.getElementById('login-email').value, password: document.getElementById('login-password').value }), credentials:'include' });
-      const data = await res.json();
-      if (!res.ok) { showError(data.error || 'Login failed'); return; }
-      window.location.href = '/';
-    } catch { showError('Connection error.'); }
-    finally { setLoading('login-btn', false, 'Sign In →'); }
-  }
-
-  async function handleRegister(e) {
-    e.preventDefault(); clearMessages();
-    setLoading('reg-btn', true, 'Create Account →');
-    try {
-      const res  = await fetch('/api/auth/register', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name: document.getElementById('reg-name').value, email: document.getElementById('reg-email').value, password: document.getElementById('reg-password').value, currency: document.getElementById('reg-currency').value }), credentials:'include' });
-      const data = await res.json();
-      if (!res.ok) { showError(data.error || 'Registration failed'); return; }
-      window.location.href = '/';
-    } catch { showError('Connection error.'); }
-    finally { setLoading('reg-btn', false, 'Create Account →'); }
-  }
-
-  async function handleForgot(e) {
-    e.preventDefault(); clearMessages();
-    if (forgotStep === 1) {
-      setLoading('forgot-btn', true, 'Find Account →');
-      try {
-        const res  = await fetch('/api/auth/find-account', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: document.getElementById('forgot-email').value }), credentials:'include' });
-        const data = await res.json();
-        if (!res.ok) { showError(data.error || 'Account not found'); return; }
-        document.getElementById('forgot-name-display').textContent = '👤 ' + data.name;
-        document.getElementById('forgot-name-confirm').style.display = 'flex';
-        document.getElementById('forgot-pw-group').style.display = 'flex';
-        document.getElementById('forgot-btn').textContent = 'Reset Password →';
-        document.getElementById('forgot-new-pw').required = true;
-        forgotStep = 2;
-        showSuccess('Account found! Set your new password below.');
-      } catch { showError('Connection error.'); }
-      finally { setLoading('forgot-btn', false, 'Find Account →'); }
-    } else {
-      setLoading('forgot-btn', true, 'Reset Password →');
-      try {
-        const res  = await fetch('/api/auth/reset-password', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: document.getElementById('forgot-email').value, newPassword: document.getElementById('forgot-new-pw').value }), credentials:'include' });
-        const data = await res.json();
-        if (!res.ok) { showError(data.error || 'Reset failed'); return; }
-        showSuccess('✅ Password reset! Signing you in…');
-        setTimeout(() => window.location.href = '/', 1500);
-      } catch { showError('Connection error.'); }
-      finally { setLoading('forgot-btn', false, 'Reset Password →'); }
-    }
-  }
-
-  function fillDemo() {
-    switchTab('login');
-    document.getElementById('login-email').value    = 'demo@finlytics.app';
-    document.getElementById('login-password').value = 'demo1234';
-  }
-
-  // Generate floating symbols
-  function generateSymbols() {
-    const container = document.getElementById('bg-symbols');
-    const symbols = ['$', '€', '£', '¥', '₹', 'C$', 'A$'];
-    for(let i = 0; i < 25; i++) {
-      const el = document.createElement('div');
-      el.className = 'bg-symbol';
-      el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
-      el.style.left = Math.random() * 100 + 'vw';
-      el.style.fontSize = (Math.random() * 40 + 20) + 'px';
-      el.style.animationDuration = (Math.random() * 10 + 10) + 's';
-      el.style.animationDelay = (Math.random() * 10) + 's';
-      container.appendChild(el);
-    }
-  }
-  generateSymbols();
-
-  // Dark mode toggle for Login page
-  function toggleLoginTheme() {
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
-  }
-</script>
+<script src="currencies.js"></script>
+<script src="common.js"></script>
+<script src="background-video.js"></script>
+<script src="login.js"></script>
 </body>
 </html>

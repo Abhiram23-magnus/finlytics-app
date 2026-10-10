@@ -1,0 +1,22 @@
+{
+  "_comment": "Fictional sample in the legacy lowdb format, for testing scripts/import-json.js. Contains no real people, passwords or financial records.",
+  "users": [
+    { "id": 1, "name": "Sam Example", "email": "sam@example.com", "currency": "EUR", "theme": "light", "created_at": "2026-01-15T10:00:00.000Z" }
+  ],
+  "categories": [
+    { "id": 1, "user_id": 1, "type": "expense", "name": "Food", "emoji": "🍔", "color": "#10B981", "bg": "rgba(16, 185, 129, 0.12)" },
+    { "id": 2, "user_id": 1, "type": "income", "name": "Salary", "emoji": "💼", "color": "#10B981", "bg": "rgba(16, 185, 129, 0.12)" }
+  ],
+  "transactions": [
+    { "id": 1, "user_id": 1, "type": "income", "merchant": "Example GmbH", "category": "Salary", "amount": 3200, "date": "2026-02-01", "notes": "", "recurring": true, "created_at": "2026-02-01T09:00:00.000Z" },
+    { "id": 2, "user_id": 1, "type": "expense", "merchant": "Market Hall", "category": "Food", "amount": 54.3, "date": "2026-02-03", "notes": "Weekly shop", "recurring": false, "created_at": "2026-02-03T18:00:00.000Z" },
+    { "id": 3, "user_id": 1, "type": "expense", "merchant": "Book Nook", "category": "Education", "amount": 18.99, "date": "2026-02-07", "notes": "", "recurring": false, "created_at": "2026-02-07T12:00:00.000Z" },
+    { "id": 4, "user_id": 1, "type": "expense", "merchant": "Broken record", "category": "Food", "amount": -5, "date": "2026-02-30", "notes": "", "recurring": false }
+  ],
+  "budgets": [
+    { "id": 1, "user_id": 1, "category": "Food", "limit_amount": 400, "emoji": "🍔", "color": "#F59E0B" }
+  ],
+  "monthly_budgets": [
+    { "id": 1, "user_id": 1, "month": "2026-02", "amount": 2500 }
+  ]
+}

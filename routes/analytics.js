@@ -3,35 +3,25 @@
 // ============================================================
 'use strict';
 
-const express        = require('express');
-const router         = express.Router();
-const requireAuth    = require('../middleware/requireAuth');
-const { Analytics }  = require('../db/database');
+const express     = require('express');
+const requireAuth = require('../middleware/requireAuth');
+const v           = require('../lib/validation');
+const { currentMonthUTC } = require('../db/repository');
 
-router.use(requireAuth);
+module.exports = function analyticsRoutes({ repo }) {
+  const router = express.Router();
+  router.use(requireAuth);
 
-// GET /api/analytics/summary
-router.get('/summary', (req, res) => {
-  const data = Analytics.summary(req.session.userId);
-  res.json(data);
-});
+  // All endpoints accept ?month=YYYY-MM (the client's local month); default is the current UTC month.
+  function monthOf(req) {
+    const m = v.queryString(req, 'month');
+    return m ? v.month(m) : currentMonthUTC();
+  }
 
-// GET /api/analytics/trends
-router.get('/trends', (req, res) => {
-  const data = Analytics.trends(req.session.userId);
-  res.json(data);
-});
+  router.get('/summary',    async (req, res) => res.json(await repo.Analytics.summary(req.session.userId, monthOf(req))));
+  router.get('/trends',     async (req, res) => res.json(await repo.Analytics.trends(req.session.userId, monthOf(req))));
+  router.get('/categories', async (req, res) => res.json(await repo.Analytics.categories(req.session.userId, monthOf(req))));
+  router.get('/heatmap',    async (req, res) => res.json(await repo.Analytics.heatmap(req.session.userId, monthOf(req))));
 
-// GET /api/analytics/categories
-router.get('/categories', (req, res) => {
-  const data = Analytics.categories(req.session.userId);
-  res.json(data);
-});
-
-// GET /api/analytics/heatmap
-router.get('/heatmap', (req, res) => {
-  const data = Analytics.heatmap(req.session.userId);
-  res.json(data);
-});
-
-module.exports = router;
+  return router;
+};
