@@ -63,6 +63,35 @@
       position: relative;
       background: var(--surface);
       border-right: 1px solid var(--border);
+      overflow: hidden; isolation: isolate;
+    }
+
+    /* ── Hero background video (decorative; see background-video.js) ── */
+    :root {
+      --hero-overlay: linear-gradient(90deg,
+        rgba(255,255,255,.94) 0%, rgba(255,255,255,.86) 40%,
+        rgba(255,255,255,.45) 72%, rgba(255,255,255,.12) 100%);
+    }
+    [data-theme="dark"] {
+      --hero-overlay: linear-gradient(90deg,
+        rgba(2,18,12,.93) 0%, rgba(2,18,12,.82) 40%,
+        rgba(2,18,12,.40) 72%, rgba(2,18,12,.12) 100%);
+    }
+    .hero-media {
+      position: absolute; inset: 0; z-index: -1;
+      pointer-events: none; user-select: none;
+      background: var(--surface);
+    }
+    .hero-video {
+      display: block; width: 100%; height: 100%;
+      object-fit: cover; object-position: 62% 50%;
+    }
+    .hero-media::after {
+      content: ''; position: absolute; inset: 0;
+      background: var(--hero-overlay);
+    }
+    @media (max-width: 1200px) {
+      .hero-video { object-position: 55% 50%; }
     }
     .hero-brand { display: flex; align-items: center; gap: 14px; margin-bottom: 60px; }
     .hero-brand-icon {
@@ -172,6 +201,12 @@
 <div class="auth-layout">
   <!-- Hero -->
   <div class="auth-hero">
+    <div class="hero-media" aria-hidden="true">
+      <video class="hero-video" data-bg-video
+             data-src-webm="media/finance-hero.webm" data-src="media/finance-hero.mp4"
+             data-poster="media/finance-hero-poster.jpg"
+             muted autoplay loop playsinline preload="metadata" tabindex="-1"></video>
+    </div>
     <div class="hero-brand">
       <div class="hero-brand-icon">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -278,6 +313,7 @@
 
 <script src="currencies.js"></script>
 <script src="common.js"></script>
+<script src="background-video.js"></script>
 <script src="login.js"></script>
 </body>
 </html>

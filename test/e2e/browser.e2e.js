@@ -75,6 +75,29 @@ async function main() {
       await shot(page, '01-login');
     });
 
+    await step('login hero: background video plays behind the content and never blocks clicks', async () => {
+      await page.waitForFunction(() => {
+        const v = document.querySelector('video[data-bg-video]');
+        return v && !v.paused && v.currentTime > 0.2 && v.muted && v.loop;
+      }, null, { timeout: 10000 });
+      const layout = await page.evaluate(() => {
+        const v = document.querySelector('video[data-bg-video]');
+        const hero = document.querySelector('.auth-hero'); // inner box (inside its border)
+        const r = v.getBoundingClientRect();
+        const headline = document.querySelector('.hero-headline').getBoundingClientRect();
+        const atHeadline = document.elementFromPoint(headline.x + 10, headline.y + headline.height / 2);
+        return {
+          fillsHero: Math.abs(r.width - hero.clientWidth) < 1 && Math.abs(r.height - hero.clientHeight) < 1,
+          objectFit: getComputedStyle(v).objectFit,
+          pointerEvents: getComputedStyle(v.parentElement).pointerEvents,
+          headlineOnTop: Boolean(atHeadline && atHeadline.closest('.hero-headline')),
+          pageScrollsSideways: document.documentElement.scrollWidth > window.innerWidth,
+          sourcesLoaded: performance.getEntriesByType('resource').filter(e => /finance-hero\.(mp4|webm)/.test(e.name)).length,
+        };
+      });
+      assert.deepEqual(layout, { fillsHero: true, objectFit: 'cover', pointerEvents: 'none', headlineOnTop: true, pageScrollsSideways: false, sourcesLoaded: 1 });
+    });
+
     await step('wrong password shows an error, demo login works', async () => {
       await page.fill('#login-email', 'demo@finlytics.app');
       await page.fill('#login-password', 'not-the-password');
@@ -301,6 +324,24 @@ async function main() {
       assert.equal(me, 401);
     });
     await mctx.close();
+
+    await step('login hero video is skipped for reduced motion and on phones', async () => {
+      for (const opts of [{ viewport: { width: 1366, height: 900 }, reducedMotion: 'reduce' }, { viewport: { width: 390, height: 844 } }]) {
+        const c = await browser.newContext(opts);
+        const p = await c.newPage();
+        watch(p, opts.reducedMotion ? 'reduced-motion' : 'phone');
+        const videoRequests = [];
+        p.on('request', r => { if (/finance-hero\.(mp4|webm)/.test(r.url())) videoRequests.push(r.url()); });
+        await p.goto(base + '/');
+        await p.waitForSelector('#login-form');
+        await p.waitForTimeout(500);
+        assert.deepEqual(videoRequests, []);
+        if (opts.reducedMotion) {
+          assert.equal(await p.getAttribute('video[data-bg-video]', 'poster'), 'media/finance-hero-poster.jpg');
+        }
+        await c.close();
+      }
+    });
 
     await step('no unexpected console errors, page errors or CSP violations', async () => {
       assert.deepEqual(consoleProblems, []);

@@ -55,6 +55,8 @@ public/
   login.html, login.js    Sign in / register / password recovery
   common.js               API client, safe DOM helpers, formatting
   style.css, vendor/      Styles, vendored Chart.js
+  background-video.js     Decorative background video loader (sign-in hero)
+  media/                  Sign-in hero video (WebM + MP4, ~1 MB each) and poster image
 test/                     node:test API/integration tests + Playwright browser checks
 ```
 
