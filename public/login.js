@@ -9,7 +9,8 @@
   let resetToken = null;
 
   // Currency dropdown
-  $('reg-currency').replaceChildren(...CURRENCIES.map(c => h('option', { value: c.code }, `${c.flag} ${c.name} (${c.symbol})`)));
+  $('currency-count').textContent = String(CURRENCIES.length);
+  $('reg-currency').replaceChildren(...CURRENCIES.map(c => h('option', { value: c.code, selected: c.code === 'USD' }, `${c.flag} ${c.name} (${c.symbol})`)));
 
   const TITLES = { login: 'Welcome back', register: 'Create account', forgot: 'Reset password', reset: 'Choose a new password' };
   const SUBTITLES = {

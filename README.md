@@ -2,7 +2,7 @@
 
 Personal expense tracker: income and expense transactions, custom categories,
 category budgets, an overall monthly budget, dashboard analytics, multiple
-currencies and dark mode.
+every ISO 4217 currency in current use (157) and dark mode.
 
 - **Backend:** Node.js 20+, Express 5, PostgreSQL (via `pg`), server-side sessions stored in PostgreSQL
 - **Frontend:** plain HTML/CSS/JS in `public/` (no build step), Chart.js vendored locally

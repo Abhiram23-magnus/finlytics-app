@@ -93,6 +93,23 @@ describe('registration, login, logout', () => {
     assert.equal(me.theme, 'light');
     assert.equal(me.currency, 'JPY');
   });
+
+  test('every listed world currency is accepted; unknown codes are rejected', async () => {
+    const { CURRENCY_CODES } = require('../public/currencies');
+    assert.ok(CURRENCY_CODES.length > 150);
+    const c = new Client(app);
+    await c.register({ currency: 'NGN' });
+    assert.equal((await c.get('/api/auth/me')).body.currency, 'NGN');
+    for (const code of ['KWD', 'BRL', 'XOF', 'CHF']) {
+      assert.equal((await c.patch('/api/auth/preferences', { currency: code })).status, 200, code);
+    }
+    for (const bad of ['XYZ', 'usd', 'US', 'XDR']) {
+      assert.equal((await c.patch('/api/auth/preferences', { currency: bad })).status, 400, bad);
+    }
+    for (const code of CURRENCY_CODES) {
+      assert.doesNotThrow(() => new Intl.NumberFormat('en-US', { style: 'currency', currency: code }), code);
+    }
+  });
 });
 
 describe('unauthorized access and expired sessions', () => {

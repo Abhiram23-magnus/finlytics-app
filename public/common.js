@@ -126,17 +126,33 @@ function tint(c, alpha = 0.12) {
 }
 
 // ── Formatting ────────────────────────────────────────────────
-const CURRENCIES = [
-  { code: 'USD', symbol: '$',  name: 'US Dollar',         flag: '🇺🇸' },
-  { code: 'EUR', symbol: '€',  name: 'Euro',              flag: '🇪🇺' },
-  { code: 'GBP', symbol: '£',  name: 'British Pound',     flag: '🇬🇧' },
-  { code: 'INR', symbol: '₹',  name: 'Indian Rupee',      flag: '🇮🇳' },
-  { code: 'JPY', symbol: '¥',  name: 'Japanese Yen',      flag: '🇯🇵' },
-  { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar',   flag: '🇨🇦' },
-  { code: 'AUD', symbol: 'A$', name: 'Australian Dollar', flag: '🇦🇺' },
-];
+const currencyNames = (() => {
+  try { return new Intl.DisplayNames(['en'], { type: 'currency' }); } catch { return null; }
+})();
 
-function currencyInfo(code) { return CURRENCIES.find(c => c.code === code) || CURRENCIES[0]; }
+function currencySymbol(code) {
+  try {
+    const parts = new Intl.NumberFormat('en-US', { style: 'currency', currency: code }).formatToParts(0);
+    return (parts.find(p => p.type === 'currency') || {}).value || code;
+  } catch { return code; }
+}
+
+/** Flag emoji from the code's country prefix (USD → 🇺🇸, EUR → 🇪🇺); a globe for supranational codes like XOF. */
+function currencyFlag(code) {
+  if (code[0] === 'X') return '🌐';
+  return String.fromCodePoint(...[...code.slice(0, 2)].map(ch => 0x1F1E6 + ch.charCodeAt(0) - 65));
+}
+
+// Every currency in public/currencies.js, sorted by name.
+const CURRENCIES = CURRENCY_CODES.map(code => ({
+  code,
+  symbol: currencySymbol(code),
+  name: (currencyNames && currencyNames.of(code)) || code,
+  flag: currencyFlag(code),
+})).sort((a, b) => a.name.localeCompare(b.name));
+
+const DEFAULT_CURRENCY = CURRENCIES.find(c => c.code === 'USD');
+function currencyInfo(code) { return CURRENCIES.find(c => c.code === code) || DEFAULT_CURRENCY; }
 
 const moneyFormatters = new Map();
 /** Formats an amount in the given ISO currency (e.g. "$1,234.50", "¥1,235"). */

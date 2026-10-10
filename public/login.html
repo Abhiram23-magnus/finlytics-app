@@ -4,6 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Finlytics — Sign In</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml"/>
   <meta name="description" content="Sign in to Finlytics — your smart expense tracker."/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -183,7 +184,7 @@
     <h1 class="hero-headline">Money, <span class="highlight">tracked.</span><br/>Goals, <span class="highlight">achieved.</span></h1>
     <p class="hero-desc">Set your monthly budget, track every spend across every category, and understand your money like never before.</p>
     <div class="hero-stats">
-      <div><span class="hero-stat-val">7</span><span class="hero-stat-lbl">Major currencies</span></div>
+      <div><span class="hero-stat-val" id="currency-count">150+</span><span class="hero-stat-lbl">World currencies</span></div>
       <div><span class="hero-stat-val">∞</span><span class="hero-stat-lbl">Custom categories</span></div>
     </div>
   </div>
@@ -275,6 +276,7 @@
   </div>
 </div>
 
+<script src="currencies.js"></script>
 <script src="common.js"></script>
 <script src="login.js"></script>
 </body>

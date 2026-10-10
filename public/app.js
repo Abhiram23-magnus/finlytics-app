@@ -133,7 +133,7 @@ function renderUser() {
   $('dash-greeting').textContent = `Hi, ${name.split(' ')[0]}`;
 
   $('setting-currency').replaceChildren(...CURRENCIES.map(c =>
-    h('option', { value: c.code, selected: currentUser.currency === c.code }, `${c.code} (${c.symbol})`)));
+    h('option', { value: c.code, selected: currentUser.currency === c.code }, `${c.code} · ${c.name} (${c.symbol})`)));
 
   const isDark = currentUser.theme === 'dark';
   document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');

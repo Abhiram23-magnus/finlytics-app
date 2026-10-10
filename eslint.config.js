@@ -17,6 +17,10 @@ module.exports = [
     },
   },
   {
+    files: ['public/currencies.js'],
+    languageOptions: { sourceType: 'script', globals: { module: 'writable' } },
+  },
+  {
     files: ['public/common.js'],
     rules: { 'no-unused-vars': 'off', 'no-redeclare': 'off' },
   },
@@ -28,7 +32,7 @@ module.exports = [
         ...globals.browser, Chart: 'readonly',
         // shared helpers defined in public/common.js
         Api: 'readonly', h: 'readonly', icon: 'readonly', safeColor: 'readonly', tint: 'readonly',
-        FALLBACK_COLOR: 'readonly', CURRENCIES: 'readonly', currencyInfo: 'readonly', formatMoney: 'readonly',
+        FALLBACK_COLOR: 'readonly', CURRENCY_CODES: 'readonly', CURRENCIES: 'readonly', currencyInfo: 'readonly', formatMoney: 'readonly',
         formatDate: 'readonly', localDateString: 'readonly', localMonthString: 'readonly',
         showToast: 'readonly', withBusy: 'readonly', debounce: 'readonly',
       },
